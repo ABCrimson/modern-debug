@@ -1,0 +1,5 @@
+# Force LF in every checkout — biome's format gate runs on all three CI OSes, and
+# Windows runners default to autocrlf (CRLF working copies would redden the formatter).
+* text=auto eol=lf
+*.png binary
+*.zip binary

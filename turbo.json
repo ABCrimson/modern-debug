@@ -5,7 +5,9 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".vitepress/dist/**"]
     },
-    "typecheck": {},
+    "typecheck": {
+      "dependsOn": ["build", "^build"]
+    },
     "//#lint": {},
     "//#knip": {},
     "test": {

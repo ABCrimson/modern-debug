@@ -1,5 +1,13 @@
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmdirSync,
+  rmSync,
+  symlinkSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -22,8 +30,14 @@ const dir = mkdtempSync(join(tmpdir(), 'md-alias-types-'))
 const junction = join(dir, 'node_modules', 'modern-debug')
 
 afterAll(() => {
-  // Remove the junction itself first — never recurse through it into the real package.
-  rmdirSync(junction)
+  // Remove the link itself first — never recurse through it into the real package.
+  // Windows junctions are directories (rmdirSync); POSIX symlinks are files (unlinkSync).
+  try {
+    if (process.platform === 'win32') rmdirSync(junction)
+    else unlinkSync(junction)
+  } catch {
+    // link never got created — the test body failed first; nothing to protect.
+  }
   rmSync(dir, { recursive: true, force: true })
 })
 
