@@ -42,7 +42,8 @@ afterAll(() => {
 })
 
 describe('require("modern-debug") types on legacy TypeScript', () => {
-  it('a CJS consumer on TS 5.8 typechecks the factory as callable', () => {
+  // Cold tsc 5.8 takes ~6 s on shared CI runners — well past vitest's 5 s default.
+  it('a CJS consumer on TS 5.8 typechecks the factory as callable', { timeout: 120_000 }, () => {
     mkdirSync(join(dir, 'node_modules'))
     symlinkSync(pkgRoot, junction, 'junction')
     writeFileSync(
