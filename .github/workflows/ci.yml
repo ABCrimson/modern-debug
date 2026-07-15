@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: ['24.18.0', '26.5.0']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verify
+      - run: pnpm -C packages/modern-debug coverage
+
+  bun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.5.0'
+          cache: pnpm
+      - uses: oven-sh/setup-bun@v2
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -C packages/modern-debug build
+      - run: bun tests-runtimes/smoke.mjs
+
+  deno:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.5.0'
+          cache: pnpm
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -C packages/modern-debug build
+      - run: deno run -A tests-runtimes/smoke.mjs
+
+  workers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.5.0'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -C packages/modern-debug build
+      - run: pnpm -C tests-workers test
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.5.0'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -C packages/modern-debug exec playwright install --with-deps chromium
+      - run: pnpm -C packages/modern-debug test:browser
+
+  # §8.6 bench gates (ENFORCED from 0.7.0): disabled <=1.05x debug, pretty >=1.5x debug,
+  # ndjson >=0.8x pino. Kept as its own job (not part of the verify matrix) so shared-runner
+  # timing variance can't block typecheck/lint/test/size/publint/attw; the acceptable margin
+  # / re-run policy for these ratios lives in bench/RESULTS.md, not here.
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.5.0'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -C packages/modern-debug build
+      - run: node bench/run-benches.mjs
+
+  # §7/§9 0.8.0 alias-migration gate: real CJS dependents (express/send/socket.io) must resolve
+  # `debug` to modern-debug/compat and log through it. The fixture is intentionally OUTSIDE the
+  # pnpm workspace glob (pnpm-workspace.yaml only lists packages/*, bench, docs, tests-workers)
+  # and installs with --ignore-workspace (DECISIONS.md G-12) so `debug` resolves as it would for
+  # a real standalone consumer, not via workspace hoisting. Because a standalone `file:` install
+  # packs modern-debug's `files` allowlist (dist only) at install time, the build MUST precede
+  # the fixture install or the fixture would receive an empty package.
+  alias-fixture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.5.0'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -C packages/modern-debug build
+      - run: pnpm -C fixtures/alias-migration install --ignore-workspace --frozen-lockfile
+      - run: pnpm -C fixtures/alias-migration test

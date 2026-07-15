@@ -1,0 +1,16 @@
+{
+  "name": "tests-workers",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run && vitest run --config vitest.miniflare.config.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.18.4",
+    "@vitest/runner": "4.1.10",
+    "@vitest/snapshot": "4.1.10",
+    "miniflare": "4.20260708.1",
+    "modern-debug": "workspace:*",
+    "vitest": "4.1.10"
+  }
+}

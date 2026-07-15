@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # DECISIONS.md G-05: npm provenance requires a `repository` field matching the CI origin.
+      # A missing field makes the first publish fail hard (client/registry E422). Fail fast here,
+      # before any install/build/verify time is spent, so publish can never run before G-05 is
+      # honored.
+      - name: Guard publish on repository field (G-05)
+        run: |
+          if ! grep -q '"repository"' packages/modern-debug/package.json; then
+            echo "::error file=packages/modern-debug/package.json::Missing top-level \"repository\" field (DECISIONS.md G-05) - npm provenance publish will fail (E422). Add it before this workflow can publish."
+            exit 1
+          fi
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.5.0'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -C packages/modern-debug build
+      # dist must exist and every gate must be green before we ever hand control to
+      # changesets/action's publish command.
+      - run: pnpm verify
+      # criticGaps[2]: the 0.9.x RC gate is a 10^6-case fuzz of the matcher against the live
+      # debug 4.4.3 oracle; the default suite (part of `pnpm verify` above) only runs 5000 cases
+      # (packages/modern-debug/test/matcher.property.test.ts reads MATCHER_FUZZ_RUNS, default
+      # 5000). Re-run it elevated, wired into an actually-executed path, so the gate can't
+      # silently decay back to a one-off local claim (G-13).
+      - name: Elevated matcher fuzz (10^6 cases)
+        run: pnpm -C packages/modern-debug exec vitest run test/matcher.property.test.ts
+        env:
+          MATCHER_FUZZ_RUNS: '1000000'
+      - uses: changesets/action@v1
+        with:
+          # Rebuild immediately before publishing rather than trusting the `build`/`verify`
+          # steps above to leave dist/ intact: changesets/action does its own git work (version
+          # bump commit, or resolving whether to publish) ahead of running this command, and
+          # dist/ is gitignored so nothing guarantees it survives untouched across that. Chaining
+          # the build directly onto the publish command means dist provably exists at the exact
+          # moment `pnpm -r publish` runs, regardless of what changesets/action did in between.
+          publish: pnpm -C packages/modern-debug build && pnpm -r publish --access public --provenance
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

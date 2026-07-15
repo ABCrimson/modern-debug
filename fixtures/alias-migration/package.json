@@ -1,0 +1,20 @@
+{
+  "name": "alias-migration-fixture",
+  "private": true,
+  "description": "§7 validation: real CJS dependents logging through `debug` aliased to modern-debug/compat",
+  "scripts": {
+    "test": "node check.cjs"
+  },
+  "dependencies": {
+    "express": "5.2.1",
+    "send": "1.2.1",
+    "socket.io": "4.8.3",
+    "socket.io-client": "4.8.3",
+    "debug": "file:../../packages/modern-debug"
+  },
+  "pnpm": {
+    "overrides": {
+      "debug": "file:../../packages/modern-debug"
+    }
+  }
+}

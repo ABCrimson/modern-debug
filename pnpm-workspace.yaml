@@ -1,0 +1,17 @@
+packages:
+  - packages/*
+  - bench
+  - docs
+  - tests-workers
+peerDependencyRules:
+  allowedVersions:
+    'tsdown>typescript': '7'
+allowBuilds:
+  esbuild: true
+  lefthook: true
+  sharp: true
+  workerd: true
+minimumReleaseAgeExclude:
+  - '@arethetypeswrong/cli@0.18.5'
+  - '@arethetypeswrong/core@0.18.5'
+  - knip@6.26.0

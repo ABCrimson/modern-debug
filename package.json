@@ -1,0 +1,25 @@
+{
+  "name": "modern-debug-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.11.0",
+  "engines": {
+    "node": ">=24.18.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "biome check .",
+    "verify": "turbo run typecheck lint knip test size publint attw",
+    "knip": "knip",
+    "changeset": "changeset",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.3",
+    "@changesets/cli": "2.31.0",
+    "knip": "6.26.0",
+    "lefthook": "2.1.10",
+    "turbo": "2.10.4"
+  }
+}

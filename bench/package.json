@@ -1,0 +1,11 @@
+{
+  "name": "bench",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "debug": "4.4.3",
+    "mitata": "1.0.34",
+    "modern-debug": "workspace:*",
+    "pino": "10.3.1"
+  }
+}

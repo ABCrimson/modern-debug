@@ -1,0 +1,17 @@
+{
+  "name": "docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "node resolve-dts.mjs && vitepress build"
+  },
+  "devDependencies": {
+    "@fontsource-variable/fraunces": "5.2.9",
+    "@fontsource-variable/geist": "5.2.9",
+    "@fontsource-variable/jetbrains-mono": "5.2.8",
+    "modern-debug": "workspace:*",
+    "shiki": "4.3.1",
+    "vitepress": "2.0.0-alpha.18"
+  }
+}

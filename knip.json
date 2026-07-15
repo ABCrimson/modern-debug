@@ -1,0 +1,29 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [],
+      "project": [],
+      "ignoreBinaries": ["coverage", "playwright", "vitest"]
+    },
+    "packages/modern-debug": {
+      "entry": [],
+      "project": "src/**/*.ts",
+      "ignoreDependencies": ["@playwright/test"]
+    },
+    "tests-workers": {
+      "entry": ["test/**/*.test.ts"],
+      "vitest": {
+        "config": ["vitest.config.ts", "vitest.miniflare.config.ts"]
+      }
+    },
+    "bench": {
+      "entry": ["suites/*.mjs"],
+      "ignoreDependencies": ["modern-debug", "pino"]
+    },
+    "docs": {
+      "entry": [],
+      "ignoreDependencies": ["modern-debug", "shiki"]
+    }
+  }
+}

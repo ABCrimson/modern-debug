@@ -1,0 +1,63 @@
+/* House design system: OKLCH tokens, dark glassmorphism.
+   Fraunces (display) / Geist (text) / JetBrains Mono (code). */
+:root {
+  --vp-font-family-base: "Geist Sans", "Geist Variable", system-ui, sans-serif;
+  --vp-font-family-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  --md-gold: oklch(0.8 0.14 85);
+  --md-gold-dark: oklch(0.72 0.145 80);
+  --md-violet: oklch(0.7 0.15 295);
+
+  --vp-c-brand-1: oklch(0.72 0.145 80);
+  --vp-c-brand-2: oklch(0.8 0.14 85);
+  --vp-c-brand-3: oklch(0.66 0.14 78);
+  --vp-c-brand-soft: oklch(0.8 0.14 85 / 0.14);
+}
+
+.dark {
+  --vp-c-bg: oklch(0.145 0.014 265);
+  --vp-c-bg-alt: oklch(0.125 0.013 265);
+  --vp-c-bg-soft: oklch(0.185 0.016 265);
+  --vp-c-bg-elv: oklch(0.185 0.016 265);
+  --vp-c-divider: oklch(0.96 0.008 265 / 0.09);
+  --vp-c-gutter: oklch(0.96 0.008 265 / 0.09);
+  --vp-c-brand-1: oklch(0.8 0.14 85);
+  --vp-c-brand-2: oklch(0.88 0.115 90);
+  --vp-c-text-1: oklch(0.93 0.01 265);
+  --vp-c-text-2: oklch(0.72 0.015 265);
+  --vp-c-text-3: oklch(0.55 0.015 265);
+}
+
+.dark body {
+  background-image:
+    radial-gradient(
+      60rem 30rem at 85% -10%,
+      oklch(from var(--md-violet) l c h / 0.07),
+      transparent 70%
+    ),
+    radial-gradient(50rem 25rem at 0% 0%, oklch(from var(--md-gold) l c h / 0.05), transparent 70%);
+}
+
+h1,
+h2,
+.VPHero .name {
+  font-family: "Fraunces Variable", var(--vp-font-family-base);
+  letter-spacing: -0.02em;
+}
+
+.VPHero .name {
+  background: linear-gradient(90deg, var(--vp-c-text-1), var(--md-gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .VPNavBar:not(.home),
+.dark .VPSidebar {
+  backdrop-filter: blur(12px);
+  background: oklch(0.145 0.014 265 / 0.78) !important;
+}
+
+table {
+  font-variant-numeric: tabular-nums;
+}

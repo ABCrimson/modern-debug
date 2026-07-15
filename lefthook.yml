@@ -1,0 +1,9 @@
+pre-commit:
+  jobs:
+    - name: biome staged
+      run: pnpm exec biome check --staged --no-errors-on-unmatched
+
+pre-push:
+  jobs:
+    - name: verify
+      run: pnpm verify

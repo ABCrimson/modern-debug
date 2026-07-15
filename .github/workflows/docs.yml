@@ -1,0 +1,42 @@
+# §11/§12 docs deployment — GitHub Pages via the actions flow (build → artifact → deploy).
+# Pages action pins verified live 2026-07-14 (DECISIONS G-15): configure-pages v6.0.0,
+# upload-pages-artifact v5.0.0, deploy-pages v5.0.0.
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.5.0'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # docs#build depends on modern-debug#build (turbo ^build) — resolve-dts and the API
+      # snippet includes read the built dist.
+      - run: pnpm turbo run build --filter=docs
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/.vitepress/dist
+      - uses: actions/deploy-pages@v5
+        id: deployment

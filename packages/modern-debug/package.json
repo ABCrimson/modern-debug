@@ -1,0 +1,90 @@
+{
+  "name": "modern-debug",
+  "version": "0.0.1",
+  "description": "Sub-1KB ESM-only universal diagnostic logger: debug-compatible namespaces, structured NDJSON, OpenTelemetry trace correlation, AsyncLocalStorage scoping.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ABCrimson/modern-debug.git",
+    "directory": "packages/modern-debug"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/compat-cjs.d.cts",
+        "default": "./dist/compat-cjs.js"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./compat": {
+      "types": "./dist/compat.d.ts",
+      "default": "./dist/compat.js"
+    },
+    "./otel": {
+      "types": "./dist/otel.d.ts",
+      "default": "./dist/otel.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "default": "./dist/node.js"
+    }
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.9.1"
+  },
+  "peerDependenciesMeta": {
+    "@opentelemetry/api": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.src.json --noEmit",
+    "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "coverage": "vitest run --coverage",
+    "size": "size-limit",
+    "publint": "publint",
+    "attw": "attw --pack . --profile esm-only --ignore-rules false-cjs"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@opentelemetry/api": "1.9.1",
+    "@playwright/test": "1.61.1",
+    "@size-limit/preset-small-lib": "12.1.0",
+    "@types/debug": "4.1.13",
+    "@types/node": "26.1.1",
+    "@vitest/browser": "5.0.0-beta.6",
+    "@vitest/browser-playwright": "5.0.0-beta.6",
+    "@vitest/coverage-v8": "5.0.0-beta.6",
+    "debug": "4.4.3",
+    "fast-check": "4.9.0",
+    "happy-dom": "20.10.6",
+    "publint": "0.3.21",
+    "size-limit": "12.1.0",
+    "tsdown": "0.22.4",
+    "typescript": "7.0.2",
+    "typescript-legacy": "npm:typescript@5.8.3",
+    "vitest": "5.0.0-beta.6"
+  },
+  "keywords": [
+    "debug",
+    "log",
+    "logger",
+    "ndjson",
+    "opentelemetry",
+    "esm",
+    "workers"
+  ]
+}
