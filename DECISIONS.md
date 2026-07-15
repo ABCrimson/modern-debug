@@ -360,3 +360,41 @@ recorded; (b) README floor wording — reworded.
 (docs build + resolve-dts) — all green, sizes as recorded above. Round three cost:
 ~4.3M subagent tokens for the review workflow + 4 fix agents. Soak clock: day 1 of 7
 (2026-07-11); P1 count at close: **0 known**.
+
+### G-15 · 2026-07-14 · GitHub genesis — remote, CI matrix proven in the cloud, 1.0.0 staged
+User granted GitHub access (soak day 4). External checklist executed:
+- **Remote:** github.com/ABCrimson/modern-debug (public — npm provenance requires the public
+  link). Genesis commit = the full Phase 0 → G-14 tree (97 files); per G-03, this is the
+  repo's first commit. `repository` field added (with `directory` for the monorepo) — G-05
+  CLOSED; publint clean with it.
+- **Docs deployed** (§12 item): GitHub Pages via workflow (`.github/workflows/docs.yml`),
+  VitePress `base: '/modern-debug/'`, live at https://abcrimson.github.io/modern-debug/ —
+  green on every run. Pages action pins verified live 2026-07-14: configure-pages v6.0.0,
+  upload-pages-artifact v5.0.0, deploy-pages v5.0.0 (§3.7-class pins, recorded here).
+- **First-ever cloud CI: 4 fresh-runner defects found and fixed** (none reachable locally,
+  all in harness/test code — product source untouched; the six pre-validated legs bun/deno/
+  workers/browser/bench/alias-fixture were green from the genesis run):
+  1. alias-types cleanup used `rmdirSync` on the link — POSIX creates a plain symlink
+     (`ENOTDIR`); now platform-split rmdir/unlink, absent-link tolerant.
+  2. Windows runners checkout with autocrlf → CRLF working copies reddened biome's format
+     gate. `.gitattributes` (`* text=auto eol=lf`, png/zip binary) forces LF everywhere.
+  3. `typecheck` raced `build` for dist on fresh machines (dist-integration.test.ts imports
+     `../dist/*.js`; local dist always existed and masked it). turbo: typecheck now
+     dependsOn build.
+  4. Cold tsc 5.8 takes ~6 s on shared runners — vitest's 5 s default flaked the legacy-TS
+     gate on four verify jobs AND the release pre-push hook. Per-test timeout 120 s.
+  Result: **CI 11/11 green** (3 OS × 2 Node verify + all six special jobs) at d26332c.
+- **Release workflow green end-to-end:** G-05 guard → install → build → `pnpm verify` →
+  10⁶ fuzz → changesets/action. Notable: `pnpm install` on the runner installs lefthook's
+  hooks, so the action's push of the version branch re-runs `pnpm verify` runner-side on the
+  VERSIONED tree — kept deliberately as defense-in-depth. One repo default flipped via API:
+  "Actions can create PRs" (`can_approve_pull_request_reviews=true`), which the action needs
+  to open the Version PR.
+- **1.0.0 staged:** PR #1 "Version Packages" (changeset-release/main) bumps modern-debug
+  0.0.1 → 1.0.0 with changelog. NOT merged — merging triggers
+  `pnpm -r publish --access public --provenance`, which needs npm credentials that do not
+  exist yet: either an `NPM_TOKEN` repo secret or npm trusted publishing (OIDC) configured
+  on npmjs.com for this repo's release.yml. Owner action required; publish stays parked.
+- §12 status after this entry: docs deployed ✓ · full CI matrix ✓ · remaining: npm publish
+  with provenance (owner credentials) + soak days 5–7 (clock unbroken: zero P1s since
+  2026-07-11 — the four fixes above are test/CI-harness defects, not product P1s).
