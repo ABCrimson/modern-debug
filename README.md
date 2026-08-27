@@ -292,6 +292,7 @@ pnpm test
 
 | Where | What |
 |---|---|
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Contributor guide — the verify gate, the testing layers, the hard constraints |
 | [`packages/modern-debug/README.md`](./packages/modern-debug/README.md) | The published package's own README |
 | [abcrimson.github.io/modern-debug](https://abcrimson.github.io/modern-debug/) | Full documentation site (guides + API reference) |
 | [`DECISIONS.md`](./DECISIONS.md) | Append-only engineering decision log |

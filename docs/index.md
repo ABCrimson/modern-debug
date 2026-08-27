@@ -31,8 +31,10 @@ grammar and a near-zero disabled path — and rebuilds everything else.
 
 ## Measured, not claimed
 
-Numbers from `bench/RESULTS.md` (mitata, Node 26.5.0 medians; gates hold on the *worst* of
-5 runs and are also enforced on Node 24.18.0 — reproduction commands in the repo):
+Numbers from `bench/RESULTS.md` (mitata, Node 26.5.0 medians). A gate passes only if the
+*worst* of 5 runs clears it. CI enforces the gates on Node 26.5.0; the same harness
+re-enforces them on Node 24.18.0 when run with `BENCH_EXTRA_NODE`, which is how the
+24.18.0 section of `RESULTS.md` was produced — reproduction commands are in that file:
 
 | Path | modern-debug | baseline | gate |
 | --- | --- | --- | --- |

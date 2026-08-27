@@ -1,7 +1,7 @@
 {
   "name": "modern-debug",
   "version": "0.0.1",
-  "description": "Sub-1KB ESM-only universal diagnostic logger: debug-compatible namespaces, structured NDJSON, OpenTelemetry trace correlation, AsyncLocalStorage scoping.",
+  "description": "Sub-2KB ESM-only universal diagnostic logger: debug-compatible namespaces, structured NDJSON, OpenTelemetry trace correlation, AsyncLocalStorage scoping.",
   "license": "MIT",
   "repository": {
     "type": "git",
