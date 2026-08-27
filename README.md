@@ -283,6 +283,17 @@ pnpm test
 
 ---
 
+## Repository guide
+
+| Where | What |
+|---|---|
+| [`packages/modern-debug/README.md`](./packages/modern-debug/README.md) | The published package's own README |
+| [abcrimson.github.io/modern-debug](https://abcrimson.github.io/modern-debug/) | Full documentation site (guides + API reference) |
+| [`DECISIONS.md`](./DECISIONS.md) | Append-only engineering decision log |
+| [`01-modern-debug-CLAUDE.md`](./01-modern-debug-CLAUDE.md) | The project spec (authoritative; see `CLAUDE.md` for the distilled executor notes) |
+
+---
+
 ## License
 
 [MIT](./packages/modern-debug/LICENSE) © 2026 crimson_dev

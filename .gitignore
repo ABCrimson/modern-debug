@@ -8,3 +8,9 @@ docs/.vitepress/dist/
 docs/.vitepress/cache/
 .vitest/
 *.log
+
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
