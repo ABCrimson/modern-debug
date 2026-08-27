@@ -5,7 +5,7 @@ Nothing overrides a Locked Decision (LD-01…LD-18, spec §2).
 
 ## Operating rules
 - Execute phases strictly in order (spec §9). Every phase ends with a gate that must exit 0.
-- After every substantive change: `pnpm verify` (typecheck → lint → test → size → publint/attw).
+- After every substantive change: `pnpm verify` (typecheck → lint → knip → test → size → publint/attw).
 - Honesty rule: never delete or weaken a gate. If it cannot be met, record the measured number
   and blocking cause in `DECISIONS.md` and surface it.
 - TDD: no production code without a failing test first.
@@ -23,5 +23,5 @@ Nothing overrides a Locked Decision (LD-01…LD-18, spec §2).
 
 ## Layout
 - `packages/modern-debug/` — the only publishable package (4 subpath entries).
-- `tests-workers/` — workerd island. `bench/` — mitata suites (0.7.0). `docs/` — VitePress (0.9.0).
+- `tests-workers/` — workerd island. `bench/` — mitata suites (phase 0.7.0). `docs/` — VitePress (phase 0.9.0).
 - `fixtures/debug-golden/` — captured `debug` 4.4.3 outputs for the differential suite.

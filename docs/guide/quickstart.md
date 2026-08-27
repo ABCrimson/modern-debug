@@ -4,6 +4,11 @@
 pnpm add modern-debug
 ```
 
+::: warning Pre-release
+The `1.0.0` release is staged in-repo but has **not yet been published to npm** — until it
+ships, install from the [Git repo](https://github.com/ABCrimson/modern-debug).
+:::
+
 ```ts
 import { createDebug } from 'modern-debug'
 
