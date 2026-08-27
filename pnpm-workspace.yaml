@@ -15,3 +15,5 @@ minimumReleaseAgeExclude:
   - '@arethetypeswrong/cli@0.18.5'
   - '@arethetypeswrong/core@0.18.5'
   - knip@6.26.0
+  - '@types/node@26.4.0'
+  - happy-dom@20.11.10

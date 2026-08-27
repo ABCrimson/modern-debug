@@ -6,11 +6,11 @@
     "test": "vitest run && vitest run --config vitest.miniflare.config.ts"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "0.18.4",
-    "@vitest/runner": "4.1.10",
-    "@vitest/snapshot": "4.1.10",
-    "miniflare": "4.20260708.1",
+    "@cloudflare/vitest-pool-workers": "0.22.0",
+    "@vitest/runner": "4.1.11",
+    "@vitest/snapshot": "4.1.11",
+    "miniflare": "4.20260730.0",
     "modern-debug": "workspace:*",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11"
   }
 }

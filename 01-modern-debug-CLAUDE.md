@@ -54,12 +54,12 @@ The most-installed utility on npm has no JSON mode, no levels, no trace correlat
 | LD-10 | Format auto-detect: TTY (`process.stderr.isTTY` feature-detected) → pretty; otherwise NDJSON. Overridable via `configure({format})` or `MODERN_DEBUG_FORMAT=pretty\|ndjson` | "Structured where it matters" without breaking local DX | LOCKED |
 | LD-11 | Default sink: `process.stderr.write` where present, else `console.error` | Matches `debug` Node behavior; Workers/browsers get console | LOCKED |
 | LD-12 | Toolchain: TypeScript **7.0.2** (GA native compiler — verified `latest` 2026-07-09), emit via tsdown 0.22.4 (rolldown 1.1.5), `.d.ts` via **isolatedDeclarations** (oxc path, no tsc emit) | Newest GA of the native-TS line; isolatedDeclarations keeps d.ts generation compiler-independent | LOCKED |
-| LD-13 | Vitest **5.0.0-beta.6** everywhere except the Workers island (`tests-workers/`), which pins vitest **4.1.10** because `@cloudflare/vitest-pool-workers` 0.18.2 declares `peerDependencies: vitest ^4.1.0` (verified from its packument 2026-07-09) | Bleeding edge where possible; the one hard peer conflict is isolated, not fought | LOCKED |
+| LD-13 | Vitest **5.0.0-beta.6** everywhere except the Workers island (`tests-workers/`), which pins vitest **4.1.10** because `@cloudflare/vitest-pool-workers` 0.18.2 declares `peerDependencies: vitest ^4.1.0` (verified from its packument 2026-07-09) *(amended per G-16: main line now 5.0.0-rc.2; island 4.1.11 + pool-workers 0.22.0, whose peers remain `vitest ^4.1.0` — island contract intact)* | Bleeding edge where possible; the one hard peer conflict is isolated, not fought | LOCKED |
 | LD-14 | Benchmarks: mitata 1.0.34; property tests: fast-check 4.9.0 | House standard | LOCKED |
 | LD-15 | `sideEffects: false`; no top-level mutable module state except the matcher singleton, initialized lazily | Tree-shaking + Workers isolate-reuse safety | LOCKED |
 | LD-16 | Levels are core (`.warn`, `.error` sugar setting `sev`), but cost ≤48 bytes; if they push core past 1024B they move to a `/levels` subpath | Budget is senior to feature placement | LOCKED |
 | LD-17 | Time in pretty mode: `+Nms` diff (debug parity) computed via `performance.now()`; NDJSON uses `Date.now()` epoch-ms | Familiar DX / machine-parseable split | LOCKED |
-| LD-18 | changesets 2.31.0 for versioning (3.0.0-next.8 exists; release tooling stays on GA — tracked upgrade trigger: changesets 3 GA) | Release plumbing must not be the experiment | LOCKED |
+| LD-18 | changesets 2.31.0 for versioning (3.0.0-next.8 exists; release tooling stays on GA — tracked upgrade trigger: changesets 3 GA) *(amended per G-16: trigger fired — changesets 3 went GA; now 3.0.1)* | Release plumbing must not be the experiment | LOCKED |
 
 ---
 
