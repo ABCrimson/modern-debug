@@ -4,7 +4,7 @@ Identical behavior everywhere is proven in CI, not claimed:
 
 | Runtime | How it is exercised |
 | --- | --- |
-| Node 24.18 LTS + 26.5 Current | full 148-test suite + smoke, on ubuntu/windows/macos |
+| Node 24.18 LTS + 26.5 Current | full 158-test suite, on ubuntu/windows/macos |
 | Bun | runtime smoke against the built dist (setup-bun) |
 | Deno 2 | runtime smoke against the built dist (setup-deno) |
 | Cloudflare workerd | in-workerd suite (vitest-pool-workers) + raw miniflare boots with `nodejs_compat` on **and** off |

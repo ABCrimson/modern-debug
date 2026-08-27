@@ -13,7 +13,7 @@ Nothing overrides a Locked Decision (LD-01…LD-18, spec §2).
 
 ## Hard constraints (memorize)
 - ESM-only, `"type": "module"`, no CJS anywhere (LD-01). Zero runtime deps (LD-02). No WASM (LD-03).
-- Size gates (min+brotli): `.` ≤1024 B · `./compat` ≤1800 B · `./otel` ≤512 B · `./node` ≤448 B.
+- Size gates (min+brotli): `.` ≤1536 B (amended per G-10) · `./compat` ≤1800 B · `./otel` ≤512 B · `./node` ≤448 B.
 - `debug` 4.4.3 grammar/color-hash parity is defined by golden fixtures, not prose (LD-04/06, §8.3).
 - Workers island `tests-workers/` stays on the vitest 4.x line — 4.1.11 (pool-workers peer
   `^4.1.0`, LD-13); everything else runs vitest 5.0.0-rc.2 (amended per G-16).

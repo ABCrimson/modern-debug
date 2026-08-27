@@ -266,6 +266,9 @@ Full guides and API reference live at **[abcrimson.github.io/modern-debug](https
 
 ## Development
 
+Monorepo toolchain: **Node ≥ 24.18.0** and **pnpm 12** (`packageManager` pins the exact
+version — pnpm self-switches to it). The published package itself only needs Node ≥ 20.19.
+
 ```sh
 git clone https://github.com/ABCrimson/modern-debug.git && cd modern-debug
 pnpm install
@@ -279,7 +282,9 @@ pnpm test
 | `pnpm test` | Unit tests (Vitest) |
 | `pnpm verify` | typecheck · lint · knip · test · size · publint · attw |
 | `pnpm -C packages/modern-debug size` | Bundle-size gates (`size-limit`, min+brotli) |
-| `node bench/run-benches.mjs` | Benchmarks (mitata) |
+| `pnpm -C packages/modern-debug test:browser` | Chromium suite (first: `pnpm -C packages/modern-debug exec playwright install chromium`) |
+| `pnpm -C tests-workers test` | Cloudflare workerd island (pool-workers + raw miniflare) |
+| `node bench/run-benches.mjs` | Benchmarks (mitata; build first) |
 
 ---
 

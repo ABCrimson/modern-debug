@@ -1,8 +1,29 @@
-# modern-debug
+<h1 align="center">modern-debug</h1>
 
-The `debug` you know, rebuilt for 2026. Sub-2KB core, ESM-only, identical `DEBUG` grammar —
-plus structured NDJSON output, OpenTelemetry trace correlation, and AsyncLocalStorage request
-scoping. Engines floor is Node ≥20.19.0 (the `require(esm)` interop floor); the tested matrix
+<p align="center">
+  <strong>The <code>debug</code> you know, rebuilt for 2026.</strong><br/>
+  A sub-2KB, ESM-only, universal diagnostic logger — identical <code>DEBUG</code> grammar, plus structured NDJSON, OpenTelemetry trace correlation, and AsyncLocalStorage request scoping.
+</p>
+
+<p align="center">
+  <a href="https://github.com/ABCrimson/modern-debug/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ABCrimson/modern-debug/ci.yml?branch=main&style=flat-square&label=CI&color=dc2626&labelColor=0a0e27"/></a>
+  <img alt="core size" src="https://img.shields.io/badge/core-1.52_kB_min%2Bbrotli-dc2626?style=flat-square&labelColor=0a0e27"/>
+  <img alt="types included" src="https://img.shields.io/badge/types-included-dc2626?style=flat-square&labelColor=0a0e27"/>
+  <img alt="zero dependencies" src="https://img.shields.io/badge/dependencies-0-dc2626?style=flat-square&labelColor=0a0e27"/>
+  <img alt="ESM only" src="https://img.shields.io/badge/module-ESM_only-dc2626?style=flat-square&labelColor=0a0e27"/>
+  <img alt="Node engine" src="https://img.shields.io/badge/node-%E2%89%A520.19-dc2626?style=flat-square&labelColor=0a0e27"/>
+  <a href="https://github.com/ABCrimson/modern-debug/blob/main/packages/modern-debug/LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-dc2626?style=flat-square&labelColor=0a0e27"/></a>
+</p>
+
+<p align="center">
+  <a href="https://abcrimson.github.io/modern-debug/">Documentation</a> &middot;
+  <a href="https://abcrimson.github.io/modern-debug/guide/quickstart">Quickstart</a> &middot;
+  <a href="https://abcrimson.github.io/modern-debug/guide/migration">Migrate from debug</a> &middot;
+  <a href="https://abcrimson.github.io/modern-debug/api/">API Reference</a> &middot;
+  <a href="https://github.com/ABCrimson/modern-debug">GitHub</a>
+</p>
+
+Engines floor is Node ≥20.19.0 (the `require(esm)` interop floor); the tested matrix
 is Node 24.18.0 LTS + 26.5.0 Current, plus Bun, Deno 2, Cloudflare workerd, and evergreen
 browsers — proven in CI, not claimed.
 
@@ -73,8 +94,9 @@ Replace semantics: each call sets the whole config; `configure({})` restores def
 
 ## Guarantees
 
-- **Disabled namespaces are near-free** — one shared-noop dispatch, ~1 ns, 5–6× cheaper than
-  `debug`'s disabled call (worst-of-5 gated on Node 26.5.0 and 24.18.0; see bench/RESULTS.md).
+- **Disabled namespaces are near-free** — one shared-noop dispatch, ~1 ns, 4–6× cheaper than
+  `debug`'s disabled call (worst-of-5 gated on Node 26.5.0 and 24.18.0; see
+  [bench/RESULTS.md](https://github.com/ABCrimson/modern-debug/blob/main/bench/RESULTS.md)).
 - **Logging never throws** — BigInt, circular refs, hostile getters degrade to a marker or
   drop the line; your code never crashes because of what it logged.
 - **The matcher is linear-time** — adversarial multi-wildcard `DEBUG` patterns cannot freeze
