@@ -1,5 +1,6 @@
 {
   "name": "modern-debug-monorepo",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@12.0.0",
