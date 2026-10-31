@@ -994,3 +994,14 @@ workers, browser, bench and alias-fixture jobs all green. Fix: the test takes `{
 and form as the alias-types 120 s budget of G-15. The 1500 runs and every assertion stay as they
 were: the gate is not weakened, only its latency budget moves from the runner's default to one
 sized by the measurement. Re-arm: the second CI run, recorded as 18.9.
+
+**18.9 · Second CI run: all green.** Push c69139f (2026-10-31T09:50Z) started CI run 41190331061, Docs
+run 41190331081 and Release run 41190331047. CI: **16 of 16** green (nine verify legs, floor,
+bun, deno, workers, browser, bench, alias-fixture); the §8.2b property test ran 2212 / 4506 /
+3726 ms on the three macOS legs under its 60 s budget. Docs: success. Release: `verify` and
+`version` success, `publish` skipped (17.11); PR #1 refreshed to f18ea24. The 18.8 re-arm is
+met, and with it the §12 row "all gates green on the full CI matrix" for this tree; the §12 rows
+still open are the owner's (bootstrap publish, trusted publisher, merge PR #1, tag and release,
+bench re-run; ROADMAP.md §1.3). The commit that records this paragraph starts a third run, which
+is checked and reported in the session report rather than here, so the ledger does not chase
+its own tail.

@@ -94,7 +94,7 @@ BENCH_EXTRA_NODE=<path to node 24.22.2> node bench/run-benches.mjs
 
 | §12 item                                              | State                     | Evidence or remaining step                                                                                                               |
 | ----------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| All §8 gates green on the full CI matrix              | this run                  | local 10/10 (18.7); CI has not run this tree                                                                                             |
+| All §8 gates green on the full CI matrix              | this run                  | local 10/10 (18.7); CI run 41190331061 16/16 green (18.9)                                                                                |
 | Size budgets hold at the publish commit               | done locally; CI this run | 1460/1753/249/132 B (M `sizes.final`)                                                                                                    |
 | Golden differential vs debug 4.4.3: 100 %             | done                      | compat golden suite inside the 342 package tests (17.8)                                                                                  |
 | Bench RESULTS.md committed with reproduction commands | done, dated               | 2026-07-14 file with a Reproduce block; regeneration is owner step 6                                                                     |
