@@ -977,3 +977,20 @@ tarball is the same. `--strict` turns publint warnings into errors; there are no
 good!"). The gate is stronger, not weaker. Measured after: `pnpm verify --force --continue`
 **10 of 10** green on this host (publint All good!, 342 package tests in 20 files, island 4
 files). The 17.10 re-arm ("the publint result of the first CI run") still stands for CI.
+
+**18.8 · First CI run of this tree and the one red test.** Push 61288f5 (2026-10-31T09:44Z)
+started CI run 41189901876, Docs run 41189901883 and Release run 41189901853. Docs: success,
+the site answers HTTP 200. Release: `verify` and `version` success, `publish` skipped (no
+trusted publisher, 17.11); the version step refreshed PR #1 to 67fbb1b (the 1.0.0 CHANGELOG
+entry and the version bump), and the branch carries no checks (default token, 17.1). CI: **14 of
+16** green; the two macOS verify legs (24.22.2 blocking, 27.0.0-alpha non-blocking) were red on
+one test, `test/format-ndjson.test.ts` "round-trips arbitrary fields and never emits raw
+newlines (§8.2b)", which timed out at vitest's 5000 ms default. Measured on the nine verify legs:
+Windows 3109 / 3801 / 3634 ms, Ubuntu 3980 / 3821 / 4713 ms, macOS 5404 / 4967 / 7201 ms; 912 ms
+on this host. Every other gate was green on every leg, including publint with the 18.7 script,
+so the 17.10 re-arm ("the publint result of the first CI run") is met; floor, bun, deno,
+workers, browser, bench and alias-fixture jobs all green. Fix: the test takes `{ timeout:
+60_000 }` (vitest 5.1.0-beta.1 `TestOptions.timeout`, the options-object form), the same cause
+and form as the alias-types 120 s budget of G-15. The 1500 runs and every assertion stay as they
+were: the gate is not weakened, only its latency budget moves from the runner's default to one
+sized by the measurement. Re-arm: the second CI run, recorded as 18.9.

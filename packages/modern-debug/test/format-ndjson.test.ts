@@ -128,7 +128,11 @@ describe('LD-07 NDJSON record', () => {
     expect(parsed.span_id).toBe('x"y')
   })
 
-  it('round-trips arbitrary fields and never emits raw newlines (§8.2b)', () => {
+  // 1500 runs of jsonValue dictionaries take 3.1–7.2 s on the shared CI runners (run 41189901876,
+  // 2026-10-31; 0.9 s locally) against vitest's 5 s default: the budget is the runner, not the formatter.
+  it('round-trips arbitrary fields and never emits raw newlines (§8.2b)', {
+    timeout: 60_000,
+  }, () => {
     const reserved = ['t', 'ns', 'msg', 'sev', 'trace_id', 'span_id']
     const key = fc.string({ minLength: 1, maxLength: 8 }).filter((k) => !reserved.includes(k))
     // Any code point (control chars included) plus lone surrogates, which 'binary' never emits,
