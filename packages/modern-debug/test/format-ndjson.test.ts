@@ -111,21 +111,50 @@ describe('LD-07 NDJSON record', () => {
     }
   })
 
+  it.for([
+    ['a string', 'abc'],
+    ['an array', [1, 2]],
+    ['undefined', undefined],
+  ] as const)('an own toJSON returning %s still yields a parseable envelope', ([, out]) => {
+    const line = formatNdjson('a', 'm', undefined, undefined, undefined, { toJSON: () => out })
+    expect(JSON.parse(line)).toEqual({ t: T, ns: 'a', msg: 'm', $fields: 'unserializable' })
+  })
+
+  it('trace ids are escaped so a non-hex id cannot break the line', () => {
+    const line = formatNdjson('a', 'm', undefined, 'a"b\nc', 'x"y', undefined)
+    expect(line.includes('\n')).toBe(false)
+    const parsed = JSON.parse(line) as Record<string, unknown>
+    expect(parsed.trace_id).toBe('a"b\nc')
+    expect(parsed.span_id).toBe('x"y')
+  })
+
   it('round-trips arbitrary fields and never emits raw newlines (§8.2b)', () => {
     const reserved = ['t', 'ns', 'msg', 'sev', 'trace_id', 'span_id']
     const key = fc.string({ minLength: 1, maxLength: 8 }).filter((k) => !reserved.includes(k))
+    // Any code point (control chars included) plus lone surrogates, which 'binary' never emits,
+    // so every branch of esc() runs; the default 'grapheme-ascii' unit is printable ASCII only.
+    const unit = fc.oneof(
+      fc.string({ unit: 'binary', minLength: 1, maxLength: 1 }),
+      fc.integer({ min: 0xd800, max: 0xdfff }).map((n) => String.fromCharCode(n)),
+    )
     fc.assert(
       fc.property(
-        fc.string({ maxLength: 20 }),
-        fc.string({ maxLength: 40 }),
+        fc.string({ unit, maxLength: 20 }),
+        fc.string({ unit, maxLength: 40 }),
+        // Both ids or neither: they arrive together from one [traceId, spanId] tuple.
+        fc.option(fc.tuple(fc.string({ unit, maxLength: 32 }), fc.string({ unit, maxLength: 16 }))),
         fc.dictionary(key, fc.jsonValue({ maxDepth: 2 }), { maxKeys: 6 }),
-        (ns, msg, fields) => {
-          const line = formatNdjson(ns, msg, undefined, undefined, undefined, fields)
+        (ns, msg, ids, fields) => {
+          const line = formatNdjson(ns, msg, undefined, ids?.[0], ids?.[1], fields)
           expect(line.includes('\n')).toBe(false)
+          // Well-formed UTF-16 (no lone surrogate); a u-flag \p{Cs} skips valid pairs.
+          expect(line).not.toMatch(/\p{Cs}/u)
           const parsed = JSON.parse(line) as Record<string, unknown>
           expect(parsed.ns).toBe(ns)
           expect(parsed.msg).toBe(msg)
           expect(parsed.t).toBe(T)
+          expect(parsed.trace_id).toBe(ids?.[0])
+          expect(parsed.span_id).toBe(ids?.[1])
           const expected = JSON.parse(JSON.stringify(fields)) as Record<string, unknown>
           for (const [k, v] of Object.entries(expected)) {
             expect(parsed[k]).toEqual(v)

@@ -3,8 +3,10 @@
 Generated from the published type declarations (`dist/*.d.ts`, isolatedDeclarations output).
 `.` and `/compat` ship their real declarations in content-hashed chunk files whose name
 changes every build (`dist/index-<hash>.d.ts`, `dist/compat-<hash>.d.ts`); `resolve-dts.mjs`
-runs before this site builds and copies the current chunk for each into
-`.vitepress/cache/api-dts/` so the includes below stay correct across builds.
+runs before this site builds (and before `dev`), copies the current chunk for each into
+`.vitepress/cache/api-dts/`, replaces the minifier alias export list with the public export
+line, and rewrites `/node`'s chunk import to the package name, so the includes below show
+public names only and stay correct across builds.
 
 ## `modern-debug`
 
@@ -16,7 +18,7 @@ runs before this site builds and copies the current chunk for each into
 
 ## `modern-debug/node`
 
-<<< ../../packages/modern-debug/dist/node.d.ts
+<<< ../.vitepress/cache/api-dts/node.d.ts
 
 ## `modern-debug/compat`
 

@@ -37,6 +37,7 @@ export interface CompatDebug {
   names: string[]
   skips: string[]
   formatters: Record<string, Formatter | undefined>
+  formatArgs(this: CompatDebugger, args: unknown[]): void
   selectColor(namespace: string): number | string
   colors: (number | string)[]
   inspectOpts: Record<string, unknown>
@@ -48,9 +49,8 @@ export interface CompatDebug {
 
 const nodeUtil = (() => {
   try {
-    return (
-      process as unknown as { getBuiltinModule?: (id: string) => typeof import('node:util') }
-    ).getBuiltinModule?.('node:util')
+    // @types/node types the per-id return; `?.` and the catch cover non-Node runtimes.
+    return process.getBuiltinModule?.('node:util')
   } catch {
     return undefined
   }
@@ -126,7 +126,8 @@ function formatArgs(this: CompatDebugger, args: unknown[]): void {
   const name = this.namespace
   if (this.useColors) {
     const c = this.color
-    const colorCode = `[3${typeof c === 'number' && c < 8 ? c : `8;5;${c}`}`
+    // debug node.js:172 compares bare `c < 8`, so a numeric string such as '3' coerces too.
+    const colorCode = `[3${(c as number) < 8 ? c : `8;5;${c}`}`
     const prefix = `  ${colorCode};1m${name} [0m`
     args[0] = prefix + String(args[0]).split('\n').join(`\n${prefix}`)
     args.push(`${colorCode}m+${humanize(this.diff)}[0m`)
@@ -141,7 +142,10 @@ function log(...args: unknown[]): unknown {
       `${nodeUtil.formatWithOptions(createDebug.inspectOpts as never, ...(args as [string]))}\n`,
     )
   }
-  // Non-Node runtimes: hand args to the console like debug's browser build does.
+  // Without node:util (no process.getBuiltinModule, as in browsers; Bun 1.4.4 has it and takes
+  // the branch above) compat does not mimic debug's browser build: formatArgs() has already
+  // written `<ISO date> ns msg` (no +Nms, no %c CSS), the %o/%O fallback has JSON-stringified,
+  // and the line goes to console.error (debug's browser build uses console.debug).
   console.error(...args)
   return true
 }
@@ -193,15 +197,14 @@ function destroy(): void {
   console.warn('debug.destroy() is a deprecated no-op')
 }
 
-let matcher: Matcher = compile('')
 let namespaces: string | undefined
 
 function enable(pattern: string): void {
   createDebug.save(pattern)
   namespaces = pattern
-  matcher = compile(typeof pattern === 'string' ? pattern : '')
-  createDebug.names = matcher.allow as string[]
-  createDebug.skips = matcher.deny as string[]
+  const m = compile(typeof pattern === 'string' ? pattern : '')
+  createDebug.names = m.allow as string[]
+  createDebug.skips = m.deny as string[]
 }
 
 function disable(): string {
@@ -220,8 +223,9 @@ function createDebugger(namespace: string): CompatDebugger {
     const self = debug
     if (!self.enabled) return
 
-    const curr = Number(new Date())
-    const ms = curr - (prevTime ?? curr)
+    const curr = Date.now()
+    // `||`, not `??`: debug common.js:76 treats a prevTime of 0 (epoch-0 fake clocks) as unset.
+    const ms = curr - (prevTime || curr)
     self.diff = ms
     self.prev = prevTime
     self.curr = curr
@@ -244,7 +248,8 @@ function createDebugger(namespace: string): CompatDebugger {
       return match
     })
 
-    formatArgs.call(self, args)
+    // Read through createDebug so a user override takes effect (debug common.js:110).
+    createDebug.formatArgs.call(self, args)
     const logFn = self.log || createDebug.log
     logFn.apply(self, args)
   }) as CompatDebugger
@@ -263,7 +268,8 @@ function createDebugger(namespace: string): CompatDebugger {
       if (enableOverride !== null) return enableOverride
       if (namespacesCache !== namespaces) {
         namespacesCache = namespaces
-        enabledCache = matches(matcher, namespace)
+        // Through createDebug.enabled, so an override of it applies (debug common.js:131).
+        enabledCache = createDebug.enabled(namespace)
       }
       return enabledCache
     },
@@ -315,11 +321,14 @@ const createDebug = Object.assign(createDebugger, {
   coerce,
   enable,
   disable,
-  enabled: (name: string): boolean => matches(matcher, name),
+  // Re-reads names/skips on every call, so reassigning them applies (debug common.js:249-263).
+  enabled: (name: string): boolean =>
+    matches({ allow: createDebug.names, deny: createDebug.skips } as Matcher, name),
   humanize,
   names: [] as string[],
   skips: [] as string[],
   formatters,
+  formatArgs,
   selectColor,
   colors: [...COLORS] as (number | string)[],
   inspectOpts,

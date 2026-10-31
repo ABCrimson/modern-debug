@@ -1,6 +1,8 @@
 // Runtime-matrix smoke (§8.4): runs unchanged on Node, Bun, and Deno 2 against the BUILT
-// dist. Exits non-zero on any mismatch. CI invokes:
+// dist. Exits non-zero on any mismatch. CI runs it on every runtime leg (ci.yml verify matrix,
+// floor job on Node.js 22.13.0, bun and deno jobs):
 //   node tests-runtimes/smoke.mjs · bun tests-runtimes/smoke.mjs · deno run -A tests-runtimes/smoke.mjs
+import { createRequire } from 'node:module'
 import compat from '../packages/modern-debug/dist/compat.js'
 import {
   configure,
@@ -10,6 +12,7 @@ import {
   enabled,
 } from '../packages/modern-debug/dist/index.js'
 import { scope, scopeFields } from '../packages/modern-debug/dist/node.js'
+import * as otel from '../packages/modern-debug/dist/otel.js'
 
 let failures = 0
 const check = (name, cond) => {
@@ -67,6 +70,23 @@ cd('value %s %d', 'str', 42)
 check(
   'compat log override gets pre-format args',
   String(raw[0]).includes('c:x value %s %d') && raw[1] === 'str' && raw[2] === 42,
+)
+
+// ./otel: the optional peer is present, no active span, so trace fields are empty
+check(
+  'otel surface',
+  typeof otel.withTraceContext === 'function' &&
+    typeof otel.traceFields === 'function' &&
+    JSON.stringify(otel.traceFields()) === '{}',
+)
+
+// "." under the require condition (compat-cjs.js): a callable with .humanize
+const required = createRequire(new URL('../packages/modern-debug/package.json', import.meta.url))(
+  'modern-debug',
+)
+check(
+  'require condition',
+  typeof required === 'function' && typeof required.humanize === 'function',
 )
 
 const hasUtil = typeof process.getBuiltinModule === 'function'

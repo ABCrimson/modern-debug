@@ -3,17 +3,25 @@
 Off a TTY, every enabled line is one flat NDJSON record with a fixed envelope key order:
 
 ```json
-{"t":1752170000000,"ns":"app:db","msg":"query ok","sev":40,"trace_id":"…","span_id":"…","rows":3}
+{
+  "t": 1752170000000,
+  "ns": "app:db",
+  "msg": "query ok",
+  "sev": 40,
+  "trace_id": "…",
+  "span_id": "…",
+  "rows": 3
+}
 ```
 
-| Key | Presence | Meaning |
-| --- | --- | --- |
-| `t` | always | epoch milliseconds (`Date.now()`) |
-| `ns` | always | namespace |
-| `msg` | always | message string |
-| `sev` | `.warn()` / `.error()` | 40 / 50 — pino-compatible severity numbers |
-| `trace_id`, `span_id` | with [OTel](./otel) wired | active span correlation |
-| …your fields | when passed | flat, after the envelope |
+| Key                   | Presence                  | Meaning                                    |
+| --------------------- | ------------------------- | ------------------------------------------ |
+| `t`                   | always                    | epoch milliseconds (`Date.now()`)          |
+| `ns`                  | always                    | namespace                                  |
+| `msg`                 | always                    | message string                             |
+| `sev`                 | `.warn()` / `.error()`    | 40 / 50 — pino-compatible severity numbers |
+| `trace_id`, `span_id` | with [OTel](./otel) wired | active span correlation                    |
+| …your fields          | when passed               | flat, after the envelope                   |
 
 Rules the serializer enforces:
 
@@ -21,7 +29,8 @@ Rules the serializer enforces:
   `span_id` are dropped, so a parsed record's envelope is always trustworthy.
 - **One line per record, always parseable.** Strings are escaped with a fast-path scan;
   lone surrogates are escaped to well-formed JSON.
-- **Logging never throws.** BigInt fields, circular references, throwing `toJSON`/getters —
+- **Logging never throws.** BigInt fields, circular references, throwing `toJSON`/getters,
+  a `toJSON` that returns a non-object —
   the record degrades to `{"$fields":"unserializable"}` or, in the pathological worst case,
   the line is dropped. Your code never crashes because of what it logged.
 
@@ -33,7 +42,8 @@ log.warn('careful') // sev: 40
 log.error('broken') // sev: 50
 ```
 
-Levels are core (they measured 9 bytes). In pretty mode they render like the base call —
+Levels are core: DECISIONS G-09 measured `.warn`/`.error` at 9 B (size-limit with esbuild,
+min+brotli, whole-file, 2026-07-10). In pretty mode they render like the base call —
 severity is a machine concern.
 
 ## Sinks

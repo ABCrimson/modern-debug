@@ -1,25 +1,34 @@
 # Migration from debug
 
+::: warning Pre-release
+modern-debug is not on npm yet (checked 2026-10-30). Until 1.0.0 ships, build and pack it
+locally (see the [Quickstart](./quickstart)). The `npm:modern-debug@^1.0.0` alias below resolves
+only after 1.0.0 is published. Until then, point the override at a built local checkout, the
+form the in-repo fixture uses, in `pnpm-workspace.yaml` (build first: a `file:` install packs
+only `dist`):
+
+```yaml
+overrides:
+  debug: file:../modern-debug/packages/modern-debug
+```
+
+:::
+
 Two paths: alias the whole dependency tree, or import the compat surface directly.
 
 ## The alias (recommended — migrates your transitive tree too)
 
 ::: code-group
 
-```json [package.json (pnpm)]
-{
-  "pnpm": {
-    "overrides": {
-      "debug": "npm:modern-debug@^1"
-    }
-  }
-}
+```yaml [pnpm-workspace.yaml (pnpm)]
+overrides:
+  debug: npm:modern-debug@^1.0.0
 ```
 
 ```json [package.json (npm)]
 {
   "overrides": {
-    "debug": "npm:modern-debug@^1"
+    "debug": "npm:modern-debug@^1.0.0"
   }
 }
 ```
@@ -27,26 +36,45 @@ Two paths: alias the whole dependency tree, or import the compat surface directl
 ```json [package.json (bun)]
 {
   "overrides": {
-    "debug": "npm:modern-debug@^1"
+    "debug": "npm:modern-debug@^1.0.0"
+  }
+}
+```
+
+```json [package.json (yarn, untested)]
+{
+  "resolutions": {
+    "debug": "npm:modern-debug@^1.0.0"
   }
 }
 ```
 
 :::
 
-Bun ≥1.1 honors the same top-level `"overrides"` field as npm — the `"pnpm"`-nested shape
-above is pnpm-specific and bun will not read it. Yarn's equivalent is the top-level
-`"resolutions"` field; bun also understands `"resolutions"` if that's what your tree already
-uses.
+| Package manager | Where the override lives                  | Tested in this repo             |
+| --------------- | ----------------------------------------- | ------------------------------- |
+| pnpm 12         | `overrides` in `pnpm-workspace.yaml`      | yes: `fixtures/alias-migration` |
+| npm             | top-level `overrides` in `package.json`   | no                              |
+| Bun             | top-level `overrides` in `package.json`   | no                              |
+| Yarn            | top-level `resolutions` in `package.json` | no (untested)                   |
+
+pnpm 12 reads overrides from `pnpm-workspace.yaml` and ignores `package.json#pnpm` (pnpm 12
+changelog). An override nested under a `"pnpm"` key in `package.json` is not applied, so
+`debug` stays unaliased.
 
 Every `require('debug')` in your tree — express, send, socket.io, all of it — now resolves the
 `modern-debug/compat` factory: default-export printf API, `%s %d %i %f %j %o %O %%`, custom
-`debug.formatters`, `.enabled`, `.extend()`, `.log` overrides, `enable/disable/names/skips`,
-the same color per namespace, the same output shape. Parity is enforced by a golden
-differential suite that runs real `debug` 4.4.3 next to compat and byte-compares.
+`debug.formatters`, `debug.formatArgs` overrides, `.enabled`, `.extend()`, `.log` overrides,
+`enable/disable/names/skips`, the same color per namespace, the same output shape. Parity is
+enforced by a golden differential suite that runs real `debug` 4.4.3 next to compat and
+byte-compares. The gaps are listed in [Divergence notes](./divergence).
 
-This is validated against real dependents in-repo: express 5.2.1, send 1.2.1 and
-socket.io 4.8.3 request/handshake cycles logging through the override.
+The in-repo fixture `fixtures/alias-migration` validates the pnpm recipe against real
+dependents: express 5.3.0, send 1.2.1, socket.io 4.8.4 and socket.io-client 4.8.4 run
+request and handshake cycles that log through the override. Its check asserts that `debug`
+resolved from express, send, socket.io, socket.io-client, router, body-parser, finalhandler,
+engine.io and socket.io-adapter is modern-debug's `dist/compat-cjs.js`, and that no registry
+`debug` is installed.
 
 ::: warning ESM consumers of the alias
 `import debug from 'debug'` under the alias is not supported in v1 — the alias serves CJS

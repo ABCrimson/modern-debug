@@ -1,7 +1,8 @@
 // Core API (§5.1): createDebug / enable / disable / enabled / configure.
-// LD-05: disabled instances dispatch to one shared noop; re-evaluation only on
-// enable()/configure(). LD-10: format = configure > MODERN_DEBUG_FORMAT > auto (TTY?).
-// LD-15 (as documented in DECISIONS G-07/G-08): global-config module state is limited to
+// LD-05 (as interpreted in DECISIONS G-07): disabled instances dispatch to one shared noop;
+// re-evaluation only on enable()/configure(). LD-10: format = configure > MODERN_DEBUG_FORMAT
+// > auto (TTY?).
+// LD-15 (as restated in DECISIONS G-08): global-config module state is limited to
 // the matcher singleton, the configure() snapshot, and the WeakRef re-bind registry.
 import { resolveEnvFormat, resolveEnvPattern } from './env.ts'
 import { formatNdjson } from './format-ndjson.ts'
@@ -112,8 +113,9 @@ function makeFn(ns: string, base: DebugFields | undefined): DebugFn {
   }
 
   // §6 fallback: without WeakRef there is no registry entry — every call re-checks.
-  // Last-resort guard: merge()'s spreads invoke user getters; a logger never crashes the
-  // caller over data shape (G-08 rule), so a pathological throw drops the line instead.
+  // Last-resort guard: user getters (merge()'s spreads), the scope/trace hooks and the
+  // configured sink all run inside emit; a logger never crashes the caller (G-08/G-12), so
+  // any throw drops the line, and a throwing sink fails silently.
   const send: Emit = (sev, msg, fields) => {
     if (!HAS_WEAKREF) rebind()
     try {

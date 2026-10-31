@@ -100,6 +100,12 @@ describe('createDebug core (§5.1)', () => {
     expect(lines()).toEqual(['app hi {"req":"2"} +0ms\n'])
   })
 
+  it('chained fields() merges bases, later call wins on conflict', () => {
+    enable('app')
+    createDebug('app').fields({ x: 1, k: 'a' }).fields({ y: 2, k: 'b' })('hi')
+    expect(lines()).toEqual(['app hi {"x":1,"k":"b","y":2} +0ms\n'])
+  })
+
   it('hostile field getters never crash the caller (last-resort emit guard)', () => {
     enable('app')
     const d = createDebug('app').fields({ base: 1 })

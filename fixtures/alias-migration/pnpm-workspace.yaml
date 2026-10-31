@@ -1,0 +1,8 @@
+# pnpm 12 reads overrides from pnpm-workspace.yaml, not package.json#pnpm (which it ignores
+# with a warning). `packages: []` makes this directory a standalone pnpm root with its own
+# lockfile, so the root workspace never sees it. CI runs `pnpm -C fixtures/alias-migration
+# install --frozen-lockfile` with no --ignore-workspace: that flag skips this file and
+# silently drops the override.
+packages: []
+overrides:
+  debug: file:../../packages/modern-debug

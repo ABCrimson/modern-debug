@@ -15,6 +15,7 @@ interface CompatModule {
     selectColor(ns: string): number | string
     colors: number[]
     formatters: Record<string, (this: CompatFn, v: unknown) => string>
+    formatArgs(this: CompatFn, args: unknown[]): void
     load(): string | undefined
   }
 }
@@ -23,6 +24,9 @@ interface CompatFn {
   namespace: string
   enabled: boolean
   color: number | string
+  useColors: boolean
+  diff: number
+  curr: number | undefined
   log?: (...args: unknown[]) => unknown
   extend(ns: string, delimiter?: string): CompatFn
   destroy(): boolean
@@ -188,5 +192,107 @@ describe('compat instance surface', () => {
     expect(typeof compat('d').destroy).toBe('function')
     compat('d').destroy()
     warn.mockRestore()
+  })
+})
+
+// Each case cites the debug 4.4.3 line it pins (node_modules/debug/src/common.js, node.js).
+describe('debug 4.4.3 parity', () => {
+  const capture = (ns: string): { d: CompatFn; logs: unknown[][] } => {
+    const logs: unknown[][] = []
+    const d = compat(ns)
+    d.log = (...args: unknown[]) => {
+      logs.push(args)
+    }
+    return { d, logs }
+  }
+
+  it('stamps curr from Date.now() (same clock as common.js:75 Number(new Date()))', () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(4242)
+    compat.enable('clock')
+    try {
+      const { d } = capture('clock')
+      d('tick')
+      expect(d.curr).toBe(4242)
+    } finally {
+      compat.disable()
+      now.mockRestore()
+    }
+  })
+
+  it('diff falls back to curr when prevTime is 0 (common.js:76 `prevTime || curr`)', () => {
+    compat.enable('epoch')
+    vi.setSystemTime(0)
+    try {
+      const { d } = capture('epoch')
+      d('first')
+      vi.setSystemTime(5)
+      d('second')
+      expect(d.curr).toBe(5)
+      expect(d.diff).toBe(0)
+    } finally {
+      vi.useRealTimers()
+      compat.disable()
+    }
+  })
+
+  it('a numeric-string color below 8 takes the basic code (node.js:172 bare `c < 8`)', () => {
+    compat.enable('tint')
+    try {
+      const { d, logs } = capture('tint')
+      d.useColors = true
+      d.color = '3'
+      d('hi')
+      expect(String(logs[0]?.[0])).toBe('  \u001B[33;1mtint \u001B[0mhi')
+      expect(String(logs[0]?.[1])).toBe('\u001B[33m+0ms\u001B[0m')
+    } finally {
+      compat.disable()
+    }
+  })
+
+  it('honours a createDebug.formatArgs override (common.js:110)', () => {
+    const original = compat.formatArgs
+    let seen: unknown
+    compat.formatArgs = function (args) {
+      seen = this
+      args[0] = `X ${String(args[0])}`
+    }
+    compat.enable('fa')
+    try {
+      const { d, logs } = capture('fa')
+      d('hi %d', 1)
+      expect(seen).toBe(d)
+      expect(logs).toEqual([['X hi %d', 1]])
+    } finally {
+      compat.formatArgs = original
+      compat.disable()
+    }
+  })
+
+  it('enabled() re-reads reassigned names/skips (common.js:249-263)', () => {
+    compat.enable('a')
+    try {
+      compat.names = ['b']
+      expect(compat.enabled('b')).toBe(true)
+      expect(compat.enabled('a')).toBe(false)
+      compat.enable('*')
+      compat.skips = ['no']
+      expect(compat.enabled('no')).toBe(false)
+      expect(compat.enabled('yes')).toBe(true)
+    } finally {
+      compat.disable()
+    }
+  })
+
+  it('the instance getter goes through createDebug.enabled (common.js:129-131)', () => {
+    const original = compat.enabled
+    compat.enabled = (ns: string) => ns === 'forced'
+    try {
+      compat.enable('nothing-matches-this')
+      expect(compat('forced').enabled).toBe(true)
+      expect(compat('other').enabled).toBe(false)
+    } finally {
+      compat.enabled = original
+      compat.disable()
+    }
   })
 })

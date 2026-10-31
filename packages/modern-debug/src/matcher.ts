@@ -5,7 +5,6 @@
 // unchanged and still gated by the oracle table + differential property suite.
 
 export interface Matcher {
-  readonly source: string
   readonly allow: readonly string[]
   readonly deny: readonly string[]
 }
@@ -21,7 +20,7 @@ export function compile(pattern: string): Matcher {
       allow.push(segment)
     }
   }
-  return { source: pattern, allow, deny }
+  return { allow, deny }
 }
 
 // debug 4.4.3's matchesTemplate, verbatim semantics: `*` wildcards with monotonic

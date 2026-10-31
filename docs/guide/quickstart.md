@@ -1,13 +1,34 @@
 # Quickstart
 
-```sh
-pnpm add modern-debug
-```
+## Install
 
 ::: warning Pre-release
-The `1.0.0` release is staged in-repo but has **not yet been published to npm** — until it
-ships, install from the [Git repo](https://github.com/ABCrimson/modern-debug).
+modern-debug is not on npm yet (checked 2026-10-30). Until 1.0.0 ships, build and pack it
+locally.
 :::
+
+Build and pack the package from the repository. Working on the repo needs Node ≥ 24.22.2 and
+pnpm 12.17.0 (the `packageManager` pin; pnpm self-switches to it):
+
+```sh
+git clone https://github.com/ABCrimson/modern-debug
+cd modern-debug
+pnpm install
+pnpm -C packages/modern-debug build
+pnpm -C packages/modern-debug pack
+```
+
+`pack` writes a `modern-debug-<version>.tgz` tarball into `packages/modern-debug/`. Install that
+file in your project:
+
+```sh
+pnpm add /path/to/modern-debug/packages/modern-debug/modern-debug-<version>.tgz
+```
+
+Your project needs Node ≥ 22.13.0 (`engines.node`). Once 1.0.0 is on npm, the install is
+`pnpm add modern-debug`.
+
+## First logger
 
 ```ts
 import { createDebug } from 'modern-debug'
@@ -25,10 +46,11 @@ Enable namespaces exactly like `debug`:
 DEBUG=app:*,-app:secrets node server.js
 ```
 
-On a TTY you get the classic colored output with `+Nms` diffs — same color per namespace as
-`debug` gave you. Everywhere else (pipes, containers, CI) each line is one flat NDJSON record:
+On a TTY you get the classic colored output with `+Nms` diffs, colored by `debug`'s 256-color
+namespace hash (the color `debug` picks when `supports-color` is installed). Everywhere else
+(pipes, containers, CI) each line is one flat NDJSON record:
 
-```json
+```jsonl
 {"t":1752170000000,"ns":"app:db","msg":"connected","host":"db-1","pool":8}
 {"t":1752170000241,"ns":"app:db","msg":"slow query","sev":40,"ms":240}
 ```

@@ -11,7 +11,10 @@ const sink = (line: string): void => {
   sunk.push(line)
 }
 
+const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stderr, 'isTTY')
+
 beforeEach(() => {
+  vi.stubEnv('MODERN_DEBUG_FORMAT', undefined)
   disable()
   sunk.length = 0
   configure({ sink })
@@ -22,6 +25,8 @@ afterEach(() => {
   disable()
   vi.unstubAllEnvs()
   vi.restoreAllMocks()
+  if (ttyDescriptor) Object.defineProperty(process.stderr, 'isTTY', ttyDescriptor)
+  else Reflect.deleteProperty(process.stderr, 'isTTY')
 })
 
 describe('configure(): sinks and format resolution', () => {
@@ -75,7 +80,7 @@ describe('configure(): sinks and format resolution', () => {
     configure({ sink, format: 'pretty', colors: true })
     enable('app')
     createDebug('app')('hi')
-    expect(sunk[0]?.startsWith('[38;5;')).toBe(true)
+    expect(sunk[0]?.startsWith('\x1b[38;5;')).toBe(true)
   })
 
   it("time:'none' omits the diff suffix", () => {
@@ -97,10 +102,11 @@ describe('configure(): sinks and format resolution', () => {
     configure({ sink, format: 'pretty', colors: true })
     enable('app:db')
     createDebug('app:db')('hello')
-    expect(sunk[0]).toBe('[38;5;199;1mapp:db[0m hello [38;5;199m+0ms[0m')
+    expect(sunk[0]).toBe('\x1b[38;5;199;1mapp:db\x1b[0m hello \x1b[38;5;199m+0ms\x1b[0m')
   })
 
   it('configure() re-binds instances created earlier', () => {
+    vi.spyOn(performance, 'now').mockReturnValue(1000)
     configure({ sink, format: 'pretty' })
     enable('app')
     const d = createDebug('app')
@@ -124,5 +130,38 @@ describe('configure(): sinks and format resolution', () => {
     createDebug('app')('hi')
     expect(spy).toHaveBeenCalledTimes(1)
     expect(String(spy.mock.calls[0]?.[0]).endsWith('\n')).toBe(true)
+  })
+
+  it('auto resolves to colored pretty when stderr is a TTY', () => {
+    Object.defineProperty(process.stderr, 'isTTY', { value: true, configurable: true })
+    configure({ sink })
+    enable('app')
+    createDebug('app')('hi')
+    expect(sunk[0]?.startsWith('\x1b[38;5;')).toBe(true)
+  })
+
+  it('MODERN_DEBUG_FORMAT=ndjson beats a TTY', () => {
+    Object.defineProperty(process.stderr, 'isTTY', { value: true, configurable: true })
+    vi.stubEnv('MODERN_DEBUG_FORMAT', 'ndjson')
+    configure({ sink })
+    enable('app')
+    createDebug('app')('hi')
+    expect(JSON.parse(sunk[0] as string)).toMatchObject({ ns: 'app', msg: 'hi' })
+  })
+
+  it("format:'auto' resolves like the default on a TTY", () => {
+    Object.defineProperty(process.stderr, 'isTTY', { value: true, configurable: true })
+    configure({ sink, format: 'auto' })
+    enable('app')
+    createDebug('app')('hi')
+    expect(sunk[0]?.startsWith('\x1b[38;5;')).toBe(true)
+  })
+
+  it("format:'auto' resolves to NDJSON off a TTY", () => {
+    Object.defineProperty(process.stderr, 'isTTY', { value: false, configurable: true })
+    configure({ sink, format: 'auto' })
+    enable('app')
+    createDebug('app')('hi')
+    expect(JSON.parse(sunk[0] as string)).toMatchObject({ ns: 'app', msg: 'hi' })
   })
 })

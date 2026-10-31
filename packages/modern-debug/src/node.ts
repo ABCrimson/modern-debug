@@ -1,5 +1,6 @@
-// §5.4: AsyncLocalStorage request scoping. Works on Node/Bun/Deno; on workerd requires the
-// nodejs_compat flag (documented; the workers island exercises the presence path).
+// §5.4: AsyncLocalStorage request scoping. Works on Node/Bun/Deno; on workerd requires
+// Node.js compatibility (on by default from compatibility date 2026-08-04; nodejs_compat
+// before that) or the nodejs_als flag alone (the workers island proves both paths).
 // Importing this module wires the scope store into core emits via the hooks slot.
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { setCtxFields } from './hooks.ts'

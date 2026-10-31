@@ -1,12 +1,9 @@
-// §8.5 size gates (min+brotli). `.` measures the §1 pillar definition: the tree-shaken cost
-// of `import { createDebug }` (1536 B per DECISIONS G-10). Subpath entries need esbuild
-// tweaks: ESM output (otel uses top-level await) and node platform (node:async_hooks).
-const esm = (config) => {
-  config.format = 'esm'
-  config.platform = 'node'
-  config.external = [...(config.external ?? []), '@opentelemetry/api']
-  return config
-}
+// §8.5 size gates (min+brotli), measured with size-limit's rolldown bundler (preset-small-lib
+// 14). `.` measures the §1 pillar: the tree-shaken cost of `import { createDebug }` (1536 B per
+// DECISIONS G-10). size-limit ignores the optional peer `@opentelemetry/api` on every check
+// because it is a peerDependency; ./node needs the node platform so `node:async_hooks` stays
+// external instead of being bundled or failing to resolve.
+const nodePlatform = (config) => ({ ...config, platform: 'node' })
 
 export default [
   {
@@ -24,12 +21,11 @@ export default [
     name: './otel',
     path: 'dist/otel.js',
     limit: '512 B',
-    modifyEsbuildConfig: esm,
   },
   {
     name: './node',
     path: 'dist/node.js',
     limit: '448 B',
-    modifyEsbuildConfig: esm,
+    modifyRolldownConfig: nodePlatform,
   },
 ]

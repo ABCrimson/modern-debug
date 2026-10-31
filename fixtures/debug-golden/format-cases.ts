@@ -45,6 +45,7 @@ export const CASES: readonly FormatCase[] = [
   { id: 'd-infinity', ns: 'app', make: () => ['n=%d', Number.POSITIVE_INFINITY] },
   { id: 'i-float', ns: 'app', make: () => ['n=%i', 3.9] },
   { id: 'i-string', ns: 'app', make: () => ['n=%i', '42px'] },
+  // biome-ignore lint/suspicious/noApproximativeNumericConstant: golden input must stay 3.14159 for debug parity
   { id: 'f-float', ns: 'app', make: () => ['n=%f', 3.14159] },
   { id: 'f-string', ns: 'app', make: () => ['n=%f', '2.5'] },
 

@@ -5,7 +5,10 @@ process.env.DEBUG = '*'
 process.env.DEBUG_COLORS = 'false'
 
 const assert = require('node:assert')
+const fs = require('node:fs')
 const http = require('node:http')
+const { createRequire } = require('node:module')
+const path = require('node:path')
 
 let captured = ''
 const originalWrite = process.stderr.write.bind(process.stderr)
@@ -19,12 +22,36 @@ const restore = () => {
 }
 
 const main = async () => {
-  // 1. the override resolves to us, and the factory is debug-shaped
-  const debugPath = require.resolve('debug')
+  // 1. the override resolves to our compat CJS entry, for us and for every transitive dependent
+  const real = (p) => fs.realpathSync(p).replaceAll('\\', '/')
+  const debugPath = real(require.resolve('debug'))
   assert(
-    debugPath.replaceAll('\\', '/').includes('modern-debug'),
-    `debug must resolve into modern-debug, got: ${debugPath}`,
+    debugPath.endsWith('/dist/compat-cjs.js'),
+    `debug must resolve to modern-debug's dist/compat-cjs.js, got: ${debugPath}`,
   )
+  // Resolve `debug` from inside each dependent's own install dir (located via its main entry); `debug/package.json` is not exported, so resolved entry files are compared, not package.json paths.
+  const locate = (name, from = __dirname) => createRequire(path.join(from, 'noop.js')).resolve(name)
+  const debugFrom = (entry) => real(createRequire(entry).resolve('debug'))
+  const expressEntry = locate('express')
+  const socketIoEntry = locate('socket.io')
+  const dependents = {
+    express: expressEntry,
+    send: locate('send'),
+    'socket.io': socketIoEntry,
+    'socket.io-client': locate('socket.io-client'),
+    router: locate('router', path.dirname(expressEntry)),
+    'body-parser': locate('body-parser', path.dirname(expressEntry)),
+    finalhandler: locate('finalhandler', path.dirname(expressEntry)),
+    'engine.io': locate('engine.io', path.dirname(socketIoEntry)),
+    'socket.io-adapter': locate('socket.io-adapter', path.dirname(socketIoEntry)),
+  }
+  for (const [name, entry] of Object.entries(dependents)) {
+    assert.strictEqual(debugFrom(entry), debugPath, `${name} must resolve debug to modern-debug`)
+  }
+  const strays = fs
+    .readdirSync(path.join(__dirname, 'node_modules', '.pnpm'))
+    .filter((d) => d.startsWith('debug@'))
+  assert.deepStrictEqual(strays, [], 'no registry debug@* directory in the virtual store')
   const dbg = require('debug')
   assert.strictEqual(typeof dbg, 'function', 'factory is callable')
   assert.strictEqual(typeof dbg.humanize, 'function', 'humanize exists')

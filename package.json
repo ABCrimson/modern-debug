@@ -3,9 +3,9 @@
   "license": "MIT",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@12.0.0",
+  "packageManager": "pnpm@12.17.0",
   "engines": {
-    "node": ">=24.18.0"
+    "node": ">=24.22.2"
   },
   "scripts": {
     "build": "turbo run build",
@@ -14,13 +14,14 @@
     "verify": "turbo run typecheck lint knip test size publint attw",
     "knip": "knip",
     "changeset": "changeset",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "release": "pnpm -C packages/modern-debug build && changeset publish"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.10",
-    "@changesets/cli": "3.0.1",
-    "knip": "6.32.3",
-    "lefthook": "2.1.10",
-    "turbo": "2.10.12"
+    "@biomejs/biome": "2.6.4",
+    "@changesets/cli": "3.0.3",
+    "knip": "6.44.0",
+    "lefthook": "2.2.2",
+    "turbo": "2.11.11-canary.1"
   }
 }

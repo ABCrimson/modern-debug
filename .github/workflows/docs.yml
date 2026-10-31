@@ -1,6 +1,6 @@
 # §11/§12 docs deployment — GitHub Pages via the actions flow (build → artifact → deploy).
-# Pages action pins verified live 2026-07-14 (DECISIONS G-15): configure-pages v6.0.0,
-# upload-pages-artifact v5.0.0, deploy-pages v5.0.0.
+# Pages action pins re-verified live 2026-10-30 (DECISIONS G-17; first set in G-15):
+# configure-pages v6.0.0, upload-pages-artifact v5.0.0, deploy-pages v5.0.1.
 name: Docs
 
 on:
@@ -24,19 +24,19 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7.0.1
+      # Installs pnpm (from `packageManager`) and Node.js, then runs `pnpm install --frozen-lockfile`.
+      - uses: pnpm/setup@v3.1.2
         with:
-          node-version: '26.5.0'
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          runtime: node@26.13.0
+          cache: true
+          require-lockfile: true
       # docs#build depends on modern-debug#build (turbo ^build) — resolve-dts and the API
       # snippet includes read the built dist.
       - run: pnpm turbo run build --filter=docs
-      - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/configure-pages@v6.0.0
+      - uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: docs/.vitepress/dist
-      - uses: actions/deploy-pages@v5
+      - uses: actions/deploy-pages@v5.0.1
         id: deployment

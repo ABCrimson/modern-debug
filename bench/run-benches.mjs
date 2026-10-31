@@ -6,7 +6,7 @@
 // spread on the ndjson suite. Ratios are computed per run (both sides measured in the same
 // child process) so machine-state drift cancels within a sample.
 // BENCH_EXTRA_NODE=<path-to-node-binary> re-runs the full protocol on a second runtime
-// (the §6 disabled gate is specced on 26.5.0 AND 24.18.0); its gates are enforced too.
+// (CI runs the §6 disabled gate on 26.13.0 AND 24.22.2, G-17); its gates are enforced too.
 // Writes RESULTS.md; exits non-zero on any breach. Run from repo root after a build.
 import { execFileSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
@@ -16,7 +16,7 @@ const RUNS = Number(process.env.BENCH_RUNS ?? 5)
 
 const suiteOnce = (name, execPath) => {
   const path = fileURLToPath(new URL(`./suites/${name}.mjs`, import.meta.url))
-  const out = execFileSync(execPath, [path], { encoding: 'utf8' })
+  const out = execFileSync(execPath, [path], { encoding: 'utf8', timeout: 120_000 })
   const line = out.split('\n').find((l) => l.startsWith('##JSON##'))
   if (!line) throw new Error(`${name}: no result marker in output:\n${out}`)
   const rows = JSON.parse(line.slice(8))

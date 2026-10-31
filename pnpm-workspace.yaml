@@ -5,15 +5,46 @@ packages:
   - tests-workers
 peerDependencyRules:
   allowedVersions:
-    'tsdown>typescript': '7'
+    'rolldown-plugin-dts>typescript': '7'
+    '@cloudflare/vitest-plugin>vitest': '5.1.0-beta.1'
 allowBuilds:
   esbuild: true
   lefthook: true
   sharp: true
   workerd: true
 minimumReleaseAgeExclude:
-  - '@arethetypeswrong/cli@0.18.5'
-  - '@arethetypeswrong/core@0.18.5'
-  - knip@6.26.0
-  - '@types/node@26.4.0'
-  - happy-dom@20.11.10
+  - '@pnpm/exe.android-arm64@12.17.0'
+  - '@pnpm/exe.android-x64@12.17.0'
+  - '@pnpm/exe.darwin-arm64@12.17.0'
+  - '@pnpm/exe.darwin-x64@12.17.0'
+  - '@pnpm/exe.freebsd-x64@12.17.0'
+  - '@pnpm/exe.linux-arm64-musl@12.17.0'
+  - '@pnpm/exe.linux-arm64@12.17.0'
+  - '@pnpm/exe.linux-ppc64@12.17.0'
+  - '@pnpm/exe.linux-riscv64@12.17.0'
+  - '@pnpm/exe.linux-s390x@12.17.0'
+  - '@pnpm/exe.linux-x64-musl@12.17.0'
+  - '@pnpm/exe.linux-x64@12.17.0'
+  - '@pnpm/exe.win32-arm64@12.17.0'
+  - '@pnpm/exe.win32-x64@12.17.0'
+  - pnpm@12.17.0
+  - '@playwright/test@1.65.0-alpha-2026-10-31'
+  - '@turbo/darwin-64@2.11.11-canary.1'
+  - '@turbo/darwin-arm64@2.11.11-canary.1'
+  - '@turbo/linux-64@2.11.11-canary.1'
+  - '@turbo/linux-arm64@2.11.11-canary.1'
+  - '@turbo/windows-64@2.11.11-canary.1'
+  - '@turbo/windows-arm64@2.11.11-canary.1'
+  - '@typescript/typescript-darwin-arm64@7.1.0-dev.20261031.1'
+  - '@typescript/typescript-darwin-x64@7.1.0-dev.20261031.1'
+  - '@typescript/typescript-linux-arm64@7.1.0-dev.20261031.1'
+  - '@typescript/typescript-linux-arm@7.1.0-dev.20261031.1'
+  - '@typescript/typescript-linux-x64@7.1.0-dev.20261031.1'
+  - '@typescript/typescript-win32-arm64@7.1.0-dev.20261031.1'
+  - '@typescript/typescript-win32-x64@7.1.0-dev.20261031.1'
+  - knip@6.44.0
+  - miniflare@5.20261023.3-beta
+  - playwright-core@1.65.0-alpha-2026-10-31
+  - playwright@1.65.0-alpha-2026-10-31
+  - turbo@2.11.11-canary.1
+  - typescript@7.1.0-dev.20261031.1

@@ -7,11 +7,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 describe('lazy env-ladder initialization', () => {
   afterEach(() => {
     vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
     vi.resetModules()
   })
 
   it('picks up process.env.DEBUG on first use', async () => {
-    vi.resetModules()
     vi.stubEnv('DEBUG', 'lazy:*')
     const core = await import('../src/index.ts')
     expect(core.enabled('lazy:x')).toBe(true)
@@ -19,14 +19,12 @@ describe('lazy env-ladder initialization', () => {
   })
 
   it('is disabled when no env rung is set', async () => {
-    vi.resetModules()
     vi.stubEnv('DEBUG', undefined)
     const core = await import('../src/index.ts')
     expect(core.enabled('anything')).toBe(false)
   })
 
   it('explicit enable() outranks the env ladder (LD-09)', async () => {
-    vi.resetModules()
     vi.stubEnv('DEBUG', 'env:*')
     const core = await import('../src/index.ts')
     core.enable('manual:*')
@@ -35,7 +33,6 @@ describe('lazy env-ladder initialization', () => {
   })
 
   it('falls back to re-check-on-call when WeakRef is unavailable (§6)', async () => {
-    vi.resetModules()
     vi.stubEnv('DEBUG', undefined)
     vi.stubGlobal('WeakRef', undefined)
     const core = await import('../src/index.ts')
@@ -52,7 +49,5 @@ describe('lazy env-ladder initialization', () => {
     core.enable('wr')
     d('on')
     expect(sunk).toEqual(['wr on +0ms'])
-    core.configure({})
-    core.disable()
   })
 })

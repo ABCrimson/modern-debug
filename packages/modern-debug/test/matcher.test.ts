@@ -1,5 +1,5 @@
 import createDebug from 'debug'
-import { describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it } from 'vitest'
 import { compile, matches } from '../src/matcher.ts'
 
 /**
@@ -106,27 +106,22 @@ const TABLE: readonly Row[] = [
   ['🔥:*', '🔥:x', true],
 ] as const
 
+// The oracle suites mutate debug's global enable state; reset it once for the whole file.
+afterAll(() => {
+  createDebug.enable('')
+})
+
+// it.for gives each row its own test, so one failing row never hides the rows after it.
 describe('grammar table sanity: rows agree with the debug 4.4.3 oracle', () => {
-  it('every row matches real debug behavior', () => {
-    for (const [pattern, ns, expected] of TABLE) {
-      createDebug.enable(pattern)
-      expect(
-        createDebug.enabled(ns),
-        `oracle: pattern=${JSON.stringify(pattern)} ns=${JSON.stringify(ns)}`,
-      ).toBe(expected)
-    }
-    createDebug.enable('')
+  it.for(TABLE)('oracle: %j enables %j -> %s', ([pattern, ns, expected]) => {
+    createDebug.enable(pattern)
+    expect(createDebug.enabled(ns)).toBe(expected)
   })
 })
 
 describe('matcher implements the LD-04 grammar', () => {
-  it('every table row', () => {
-    for (const [pattern, ns, expected] of TABLE) {
-      expect(
-        matches(compile(pattern), ns),
-        `matcher: pattern=${JSON.stringify(pattern)} ns=${JSON.stringify(ns)}`,
-      ).toBe(expected)
-    }
+  it.for(TABLE)('matcher: %j enables %j -> %s', ([pattern, ns, expected]) => {
+    expect(matches(compile(pattern), ns)).toBe(expected)
   })
 
   it('allow/deny arrays reconstruct the pattern the way debug disable() does', () => {
@@ -142,9 +137,8 @@ describe('matcher implements the LD-04 grammar', () => {
 
   it('compiles once into an allow/deny template pair (LD-04 as amended by G-08)', () => {
     const m = compile('a:*, -a:b, c')
-    expect(m.allow).toEqual(['a:*', 'c'])
-    expect(m.deny).toEqual(['a:b'])
-    expect(m.source).toBe('a:*, -a:b, c')
+    // Exactly the LD-04 shape: no write-only extras ride along in the shared matcher chunk.
+    expect(m).toStrictEqual({ allow: ['a:*', 'c'], deny: ['a:b'] })
   })
 
   it('is linear-time on adversarial multi-wildcard patterns (no ReDoS)', () => {

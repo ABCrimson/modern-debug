@@ -27,7 +27,11 @@ export function formatNdjson(
 ): string {
   let line = `{"t":${Date.now()},"ns":"${esc(ns)}","msg":"${esc(msg)}"`
   if (sev !== undefined) line += `,"sev":${sev}`
-  if (traceId !== undefined) line += `,"trace_id":"${traceId}","span_id":"${spanId}"`
+  // The ids arrive together from a [traceId, spanId] tuple, so spanId is set whenever traceId is.
+  // Escaped like ns/msg: the OTel API does not enforce its hex contract on wrapped contexts.
+  if (traceId !== undefined) {
+    line += `,"trace_id":"${esc(traceId)}","span_id":"${esc(spanId as string)}"`
+  }
   if (fields != null) {
     // Rest-destructure drops reserved envelope keys so the envelope always wins on parse.
     // try/catch: destructuring invokes user getters — a logger never crashes over data shape.

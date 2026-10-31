@@ -12,6 +12,16 @@ describe('/otel with the peer missing', () => {
     vi.doMock('@opentelemetry/api', () => {
       throw new Error("Cannot find package '@opentelemetry/api'")
     })
-    await expect(import('../src/otel.ts')).rejects.toThrow(/optional peer/)
+    const e = await import('../src/otel.ts').then(
+      () => null,
+      (x: unknown) => x,
+    )
+    expect(e).toBeInstanceOf(Error)
+    expect((e as Error).message).toMatch(/optional peer/)
+    // The original load failure survives as the cause; vitest wraps the mock factory's
+    // error once more, hence cause.cause.
+    expect(((e as Error).cause as Error | undefined)?.cause).toMatchObject({
+      message: expect.stringMatching(/Cannot find package/),
+    })
   })
 })

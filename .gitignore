@@ -6,6 +6,8 @@ coverage/
 .wrangler/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
+# VitePress SSR scratch during build; knip reads .gitignore, so an in-flight docs build no longer counts as "unused files" (Release failure at d9ba2cc, DECISIONS G-17)
+docs/.vitepress/.temp/
 .vitest/
 *.log
 
@@ -14,3 +16,12 @@ docs/.vitepress/cache/
 .env.*
 !.env.example
 *.pem
+
+# agent run state (audit dumps, gate logs) — never committed
+.claude/run/
+
+# orphan vitest failure screenshots; toMatchScreenshot baselines would share this folder, so un-ignore it if visual tests are adopted
+packages/modern-debug/test-browser/__screenshots__/
+
+# packed tarballs
+*.tgz

@@ -58,7 +58,7 @@ describe('WeakRef-absent fallback (§6 / G-08)', () => {
     const core = await import('../src/index.ts')
     vi.unstubAllGlobals()
 
-    // --expose-gc is wired via poolOptions.forks.execArgv in vitest.config.ts.
+    // --expose-gc is wired via test.execArgv on the `node` project in vitest.config.ts (forks pool).
     expect(typeof globalThis.gc).toBe('function')
     let collected = false
     const watcher = new FinalizationRegistry(() => {

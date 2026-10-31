@@ -5,115 +5,169 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# `pnpm install` runs the root `prepare: lefthook install`; LEFTHOOK=0 makes every installed
+# hook exit early, so no runner-side git operation re-runs the pre-commit/pre-push gates.
+env:
+  LEFTHOOK: '0'
+
+# Action pins are exact tags, verified live 2026-10-30 (DECISIONS G-17). pnpm/setup installs
+# pnpm (from `packageManager`) and Node.js in one step and runs `pnpm install --frozen-lockfile`
+# itself (require-lockfile), so no job carries actions/setup-node or an explicit install,
+# except where a second Node.js is needed (floor, bench).
 jobs:
+  # Node.js 24.22.2 and 26.13.0 are blocking; 27.0.0-alpha.0.0.0 is the early-warning leg:
+  # job-level continue-on-error keeps the run green when only that leg fails.
   verify:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node: ['24.18.0', '26.5.0']
+        node: ['24.22.2', '26.13.0', '27.0.0-alpha.0.0.0']
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.node == '27.0.0-alpha.0.0.0' }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/setup@v3.1.2
         with:
-          node-version: ${{ matrix.node }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          runtime: node@${{ matrix.node }}
+          cache: true
+          require-lockfile: true
       - run: pnpm verify
+      # `pnpm verify` builds dist first (turbo: test/size dependsOn build), so the smoke runs
+      # against the built package through Node's native loader.
+      - run: node tests-runtimes/smoke.mjs
       - run: pnpm -C packages/modern-debug coverage
+
+  # The published floor (packages/modern-debug engines `>=22.13.0`) is below the workspace's
+  # own floor (root engines `>=24.22.2`), so the toolchain installs and builds on 26.13.0 and
+  # only the consumer-side checks switch to Node.js 22.13.0: the ESM smoke and the alias
+  # fixture's CJS dependents, which load modern-debug/compat through require(esm).
+  floor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/setup@v3.1.2
+        with:
+          runtime: node@26.13.0
+          cache: true
+          require-lockfile: true
+      - run: pnpm -C packages/modern-debug build
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22.13.0'
+      - name: Assert the floor Node.js is first on PATH
+        run: test "$(node --version)" = v22.13.0
+      - run: node tests-runtimes/smoke.mjs
+      - run: pnpm -C fixtures/alias-migration install --frozen-lockfile
+      - run: pnpm -C fixtures/alias-migration test
 
   bun:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/setup@v3.1.2
         with:
-          node-version: '26.5.0'
-          cache: pnpm
-      - uses: oven-sh/setup-bun@v2
-      - run: pnpm install --frozen-lockfile
+          runtime: node@26.13.0
+          cache: true
+          require-lockfile: true
+      - uses: oven-sh/setup-bun@v2.2.0
       - run: pnpm -C packages/modern-debug build
       - run: bun tests-runtimes/smoke.mjs
 
   deno:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/setup@v3.1.2
         with:
-          node-version: '26.5.0'
-          cache: pnpm
-      - uses: denoland/setup-deno@v2
+          runtime: node@26.13.0
+          cache: true
+          require-lockfile: true
+      - uses: denoland/setup-deno@v2.0.5
         with:
           deno-version: v2.x
-      - run: pnpm install --frozen-lockfile
       - run: pnpm -C packages/modern-debug build
       - run: deno run -A tests-runtimes/smoke.mjs
 
   workers:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/setup@v3.1.2
         with:
-          node-version: '26.5.0'
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          runtime: node@26.13.0
+          cache: true
+          require-lockfile: true
       - run: pnpm -C packages/modern-debug build
       - run: pnpm -C tests-workers test
 
   browser:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/setup@v3.1.2
         with:
-          node-version: '26.5.0'
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          runtime: node@26.13.0
+          cache: true
+          require-lockfile: true
       - run: pnpm -C packages/modern-debug exec playwright install --with-deps chromium
       - run: pnpm -C packages/modern-debug test:browser
 
   # §8.6 bench gates (ENFORCED from 0.7.0): disabled <=1.05x debug, pretty >=1.5x debug,
   # ndjson >=0.8x pino. Kept as its own job (not part of the verify matrix) so shared-runner
   # timing variance can't block typecheck/lint/test/size/publint/attw; the acceptable margin
-  # / re-run policy for these ratios lives in bench/RESULTS.md, not here.
+  # / re-run policy for these ratios lives in bench/RESULTS.md, not here. The protocol runs on
+  # both Node.js lines: 26.13.0 is the primary runtime, and BENCH_EXTRA_NODE points
+  # run-benches.mjs at a 24.22.2 binary for the second pass. RESULTS.md is uploaded even when
+  # a gate fails, so a breach keeps its measured ratios.
   bench:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
         with:
-          node-version: '26.5.0'
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          node-version: '24.22.2'
+      - run: echo "BENCH_EXTRA_NODE=$(command -v node)" >> "$GITHUB_ENV"
+      # Runs after the 24.22.2 setup so its Node.js 26.13.0 is first on PATH (the primary).
+      - uses: pnpm/setup@v3.1.2
+        with:
+          runtime: node@26.13.0
+          cache: true
+          require-lockfile: true
+      - name: Assert Node.js 26.13.0 is the primary runtime
+        run: test "$(node --version)" = v26.13.0
       - run: pnpm -C packages/modern-debug build
       - run: node bench/run-benches.mjs
+      - if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: bench-results
+          path: bench/RESULTS.md
 
   # §7/§9 0.8.0 alias-migration gate: real CJS dependents (express/send/socket.io) must resolve
   # `debug` to modern-debug/compat and log through it. The fixture is intentionally OUTSIDE the
-  # pnpm workspace glob (pnpm-workspace.yaml only lists packages/*, bench, docs, tests-workers)
-  # and installs with --ignore-workspace (DECISIONS.md G-12) so `debug` resolves as it would for
-  # a real standalone consumer, not via workspace hoisting. Because a standalone `file:` install
-  # packs modern-debug's `files` allowlist (dist only) at install time, the build MUST precede
-  # the fixture install or the fixture would receive an empty package.
+  # pnpm workspace glob (pnpm-workspace.yaml only lists packages/*, bench, docs, tests-workers),
+  # and its own pnpm-workspace.yaml (which carries the `debug` override) makes it a standalone
+  # root with its own lockfile, so `debug` resolves as it would for a real standalone consumer,
+  # not via workspace hoisting. Because a standalone `file:` install packs modern-debug's
+  # `files` allowlist (dist only) at install time, the build MUST precede the fixture install
+  # or the fixture would receive an empty package.
   alias-fixture:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/setup@v3.1.2
         with:
-          node-version: '26.5.0'
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          runtime: node@26.13.0
+          cache: true
+          require-lockfile: true
       - run: pnpm -C packages/modern-debug build
-      - run: pnpm -C fixtures/alias-migration install --ignore-workspace --frozen-lockfile
+      - run: pnpm -C fixtures/alias-migration install --frozen-lockfile
       - run: pnpm -C fixtures/alias-migration test

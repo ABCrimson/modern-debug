@@ -10,7 +10,7 @@ export default defineConfig({
   },
   format: 'esm',
   platform: 'neutral',
-  target: 'es2023',
+  target: 'es2024',
   minify: true,
   dts: { generator: 'oxc' },
   deps: { neverBundle: [/^node:/, '@opentelemetry/api'] },

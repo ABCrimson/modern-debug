@@ -4,16 +4,39 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: write
-  pull-requests: write
-  id-token: write
+# Reset the token to nothing; each job asks for exactly what it needs. id-token: write lives
+# only on `publish`, which runs no install scripts, so a compromised dev dependency running in
+# `verify` cannot mint an npm OIDC token. This is the sub-action split changesets/action
+# v2.1.2 recommends for trusted publishing (README.md; select-mode/, pack/, version/ and
+# publish/action.yml at the v2.1.2 tag).
+permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+# `pnpm install` runs the root `prepare: lefthook install`; LEFTHOOK=0 makes every installed
+# hook exit early, so no runner-side git operation re-runs `pnpm verify` (the explicit
+# `pnpm verify` step in `verify` is the gate).
+env:
+  LEFTHOOK: '0'
+
+# Action pins are exact tags, verified live 2026-10-30 (DECISIONS G-17). The store cache is
+# off in every job here (pnpm/setup's default) so a poisoned store cannot reach a release;
+# pnpm/setup still restores its lockfile-verification log, which it guards itself (pnpm/setup
+# README, 'Lockfile verification cache').
 jobs:
-  release:
+  verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      mode: ${{ steps.select-mode.outputs.mode }}
+      pack-dir-artifact-id: ${{ steps.pack.outputs.pack-dir-artifact-id }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
       # DECISIONS.md G-05: npm provenance requires a `repository` field matching the CI origin.
       # A missing field makes the first publish fail hard (client/registry E422). Fail fast here,
       # before any install/build/verify time is spent, so publish can never run before G-05 is
@@ -24,15 +47,12 @@ jobs:
             echo "::error file=packages/modern-debug/package.json::Missing top-level \"repository\" field (DECISIONS.md G-05) - npm provenance publish will fail (E422). Add it before this workflow can publish."
             exit 1
           fi
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: pnpm/setup@v3.1.2
         with:
-          node-version: '26.5.0'
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          runtime: node@26.13.0
+          require-lockfile: true
       - run: pnpm -C packages/modern-debug build
-      # dist must exist and every gate must be green before we ever hand control to
-      # changesets/action's publish command.
+      # dist must exist and every gate must be green before anything is packed or versioned.
       - run: pnpm verify
       # criticGaps[2]: the 0.9.x RC gate is a 10^6-case fuzz of the matcher against the live
       # debug 4.4.3 oracle; the default suite (part of `pnpm verify` above) only runs 5000 cases
@@ -43,15 +63,65 @@ jobs:
         run: pnpm -C packages/modern-debug exec vitest run test/matcher.property.test.ts
         env:
           MATCHER_FUZZ_RUNS: '1000000'
-      - uses: changesets/action@v1
+      # 'version' when changesets are pending, 'publish' when the versions on main are not on
+      # npm yet, otherwise 'none'. In publish mode it uploads the publish plan as an artifact.
+      - id: select-mode
+        uses: changesets/action/select-mode@v2.1.2
+      # Packs the tarballs from the dist built and verified above, so `publish` ships exactly
+      # what passed the gates and never builds or runs install scripts itself.
+      - id: pack
+        if: steps.select-mode.outputs.mode == 'publish'
+        uses: changesets/action/pack@v2.1.2
         with:
-          # Rebuild immediately before publishing rather than trusting the `build`/`verify`
-          # steps above to leave dist/ intact: changesets/action does its own git work (version
-          # bump commit, or resolving whether to publish) ahead of running this command, and
-          # dist/ is gitignored so nothing guarantees it survives untouched across that. Chaining
-          # the build directly onto the publish command means dist provably exists at the exact
-          # moment `pnpm -r publish` runs, regardless of what changesets/action did in between.
-          publish: pnpm -C packages/modern-debug build && pnpm -r publish --access public --provenance
+          publish-plan-artifact-id: ${{ steps.select-mode.outputs.publish-plan-artifact-id }}
+
+  version:
+    needs: verify
+    if: needs.verify.outputs.mode == 'version'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/setup@v3.1.2
+        with:
+          runtime: node@26.13.0
+          install: false
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # Opens or updates the "Version Packages" PR, pushing through the GitHub API with the
+      # default github.token. GitHub starts no workflow runs for a push made with that token, so
+      # ci.yml does not check the version branch. The owner's option: install a GitHub App
+      # (contents + pull-requests write), mint its token with actions/create-github-app-token
+      # in a step before this one, and pass it as `github-token:` here.
+      - uses: changesets/action/version@v2.1.2
+
+  publish:
+    needs: verify
+    if: needs.verify.outputs.mode == 'publish'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/setup@v3.1.2
+        with:
+          runtime: node@26.13.0
+          install: false
+      # @changesets/cli must be installed for the publish sub-action; --ignore-scripts keeps
+      # every dependency lifecycle script out of the job that holds id-token: write.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # npm trusted publishing (OIDC) only: no NPM_TOKEN exists. Publishing works once the owner
+      # registers this repository's release.yml as a trusted publisher on npmjs.com. pnpm attaches
+      # provenance under trusted publishing on its own; PNPM_CONFIG_PROVENANCE makes it explicit
+      # (pnpm 11+ reads pnpm_config_* variables only, not npm_config_*).
+      - uses: changesets/action/publish@v2.1.2
+        with:
+          pack-dir-artifact-id: ${{ needs.verify.outputs.pack-dir-artifact-id }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PNPM_CONFIG_PROVENANCE: 'true'
